@@ -28,10 +28,10 @@ private:
     AActor* PermanentEndRoom;
 
     UPROPERTY(EditAnywhere, Category = "Grid")
-    float GridSpacingX = 2203.f;
+    float GridSpacingX = 3300.f;
 
     UPROPERTY(EditAnywhere, Category = "Grid")
-    float GridSpacingY = 2203.f;
+    float GridSpacingY = 3300.f;
 
     UPROPERTY(EditAnywhere, Category = "Grid")
     float HallwayLength = 507.f;
