@@ -7,6 +7,8 @@
 #include "Logging/LogMacros.h"
 #include "ItemDatabase.h"
 #include "InventoryWidget.h"
+#include "Blueprint/IUserObjectListEntry.h"
+#include "Blueprint/UserWidget.h"
 #include "TestCharacter.generated.h"
 
 class UInputComponent;
@@ -109,6 +111,7 @@ protected:
 	void Interact();
 	void InteractCheck();
 	void ToggleInventory();
+	void RemoveItem(const FItemData& data);
 
 	FHitResult InteractHitResult;
 
