@@ -8,15 +8,15 @@
 
 class AItem;
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FItemData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditInstanceOnly)
 	FName ItemName;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditInstanceOnly)
 	TSubclassOf<AItem> Class;
 
 	FORCEINLINE bool operator==(const FItemData& Other) const

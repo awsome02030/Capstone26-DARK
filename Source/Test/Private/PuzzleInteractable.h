@@ -19,7 +19,7 @@ class APuzzleInteractable : public AStaticMeshActor
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Puzzle")
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Puzzle")
 	TArray<FItemData> requredItems;
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Puzzle")
 	TArray<class APuzzleDoor*> TiedClass;
