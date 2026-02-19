@@ -109,6 +109,7 @@ protected:
 	void Interact();
 	void InteractCheck();
 	void ToggleInventory();
+	void RemoveItem(const FItemData& data);
 
 	FHitResult InteractHitResult;
 
