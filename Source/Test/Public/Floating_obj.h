@@ -12,33 +12,25 @@ class TEST_API AFloating_obj : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	AFloating_obj();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 private:
-	// Static Mesh Component
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* Mesh;
 
-	// Save Start Point
 	FVector StartLocation;
 
-	// Running Time
 	float RunningTime;
 
-	// Height of Floating
 	UPROPERTY(EditAnywhere)
 	float Amplitude;
 
-	// Speed of Floating
 	UPROPERTY(EditAnywhere)
 	float Speed;
 };
