@@ -8,6 +8,9 @@
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
 #include "Item.h"
+#include "InventoryWidget.h"
+#include "InventoryEntry.h"
+#include "ItemDatabase.h"
 #include "TestPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "InputMappingContext.h"
@@ -15,6 +18,7 @@
 #include "Engine/LocalPlayer.h"
 #include <EnhancedInputSubsystems.h>
 #include "Test.h"
+#include "PuzzleInteractable.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/TextBlock.h"
@@ -197,7 +201,7 @@ void ATestCharacter::InteractCheck()
     // DrawDebugLine(GetWorld(), Start, End, bHit ? FColor::Green : FColor::Red, false, 0.f, 0, 1.f);
 
     // Show widget if we hit an AItem
-    if (bHit && Hit.GetActor() && Hit.GetActor()->IsA<AItem>())
+    if (bHit && Hit.GetActor() && (Hit.GetActor()->IsA<AItem>() || Hit.GetActor()->IsA<APuzzleInteractable>()))
     {
         InteractWidget->SetVisibility(ESlateVisibility::Visible);
         InteractHitResult = Hit;
@@ -211,15 +215,32 @@ void ATestCharacter::InteractCheck()
 
 void ATestCharacter::Interact()
 {
-    if (AItem* Item = Cast<AItem>(InteractHitResult.GetActor()))
-    {
-		FItemData* Data = ItemDatabase->Items.FindByPredicate([&](const FItemData& ItemData) {
+	if (AItem* Item = Cast<AItem>(InteractHitResult.GetActor()))
+	{
+		if (Inventory.Num() <= 5) {
+			FItemData* Data = ItemDatabase->Items.FindByPredicate([&](const FItemData& ItemData) {
 			return ItemData.Class == InteractHitResult.GetActor()->GetClass();
-		});
+			});
 
-		Inventory.Emplace(*Data);
-		InteractHitResult.GetActor()->Destroy();
-    }
+			Inventory.Emplace(*Data);
+			InteractHitResult.GetActor()->Destroy();
+
+		}
+	}
+	else if (APuzzleInteractable* Check = Cast<APuzzleInteractable>(InteractHitResult.GetActor())) {
+		for (int i = Check->requredItems.Num() - 1; i >= 0; i--) {
+			FItemData& NeededItem = Check->requredItems[i];
+
+			if (Inventory.Contains(NeededItem)) {
+				RemoveItem(NeededItem);
+				Check->requredItems.RemoveAt(i);
+			}
+		}
+
+		if (Check->requredItems.Num() == 0) {
+			Check->OnPuzzleComplete();
+		}
+	}
 }
 
 bool ATestCharacter::PerformInteractTrace(FHitResult& OutHit, float TraceDistance) const
@@ -291,5 +312,18 @@ void ATestCharacter::ToggleInventory()
             GetController()->SetIgnoreMoveInput(false);
             GetController()->SetIgnoreLookInput(false);
         }
+    }
+}
+
+void ATestCharacter::RemoveItem(const FItemData& Data)
+{
+    Inventory.RemoveAll([&](const FItemData& Item)
+    {
+        return Item.ItemName == Data.ItemName;
+    });
+
+    if (InventoryWidget)
+    {
+        InventoryWidget->RefreshInventory(Inventory);
     }
 }
