@@ -60,9 +60,6 @@ protected:
 	UInputAction* InventoryAction;
 
 	UPROPERTY(EditDefaultsOnly)
-	UInputAction* DeviceAction;
-
-	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UUserWidget> InteractWidgetClass;
 	UPROPERTY()
 	UUserWidget* InteractWidget;
@@ -72,35 +69,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	UItemDatabase* ItemDatabase;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Device")
-	TSubclassOf<AActor> HandheldClass;
-
-	UPROPERTY()
-	AActor* HandheldActor = nullptr;
-
-	UPROPERTY(EditAnywhere, Category = "Device")
-	FVector HandheldOffset = FVector(30.f, 12.f, -15.f);
-
-	UPROPERTY(EditAnywhere, Category = "Device")
-	FRotator HandheldRotation = FRotator(0.f, 0.f, 0.f);
-
-	UPROPERTY(EditAnywhere, Category = "Device")
-	float DeviceAnimDuration = 0.3f;
-
-	UPROPERTY(EditAnywhere, Category = "Device")
-	float DeviceStartZ = -50.f;
-
-	UPROPERTY(EditAnywhere, Category = "Device")
-	float DeviceTargetZ = 0.f;
-
-	float DeviceAnimTime = 0.f;
-	bool bDeviceAnimating = false;
-	bool bDeviceOpening = false;
-
-	void SpawnAndAttachHandheld();
-
-	void ToggleDevice();
 
 public:
 	ATestCharacter();
