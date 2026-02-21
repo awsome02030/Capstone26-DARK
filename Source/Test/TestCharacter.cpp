@@ -80,7 +80,12 @@ void ATestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ATestCharacter::Interact);
 
 		EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Started, this, &ATestCharacter::ToggleInventory);
+
+		// toggle device
+		EnhancedInputComponent->BindAction(DeviceAction, ETriggerEvent::Started, this, &ATestCharacter::ToggleDevice);
 	}
+
+
 	else
 	{
 		UE_LOG(LogTest, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
@@ -115,6 +120,12 @@ void ATestCharacter::BeginPlay()
 
 			bUIReady = true;
 	}
+
+	SpawnAndAttachHandheld();
+	if (HandheldActor)
+	{
+		HandheldActor->SetActorHiddenInGame(true);
+	}
 }
 
 void ATestCharacter::MoveInput(const FInputActionValue& Value)
@@ -144,7 +155,7 @@ void ATestCharacter::DoAim(float Yaw, float Pitch)
 		// pass the rotation inputs
 		float Sensitivity = 4.f;
 
-		AddControllerYawInput(Yaw * Sensitivity);
+		AddControllerYawInput( Yaw * Sensitivity);
 		AddControllerPitchInput(Pitch);
 	}
 }
@@ -179,6 +190,32 @@ void ATestCharacter::Tick(float DeltaTime)
      {
 		InteractCheck();
      }
+
+	 if (bDeviceAnimating && HandheldActor)
+	 {
+		 DeviceAnimTime += DeltaTime;
+
+		 const float Alpha = FMath::Clamp(DeviceAnimTime / DeviceAnimDuration, 0.f, 1.f);
+
+		 const float NewZ = bDeviceOpening
+			 // Current start and target is 0 and -50 for now, will need some tweaking
+			 ? FMath::Lerp(DeviceStartZ, DeviceTargetZ, Alpha)
+			 : FMath::Lerp(DeviceTargetZ, DeviceStartZ, Alpha);
+
+		 FVector Loc = HandheldOffset;
+		 Loc.Z = NewZ;
+		 HandheldActor->SetActorRelativeLocation(Loc);
+
+		 if (Alpha >= 1.f)
+		 {
+			 bDeviceAnimating = false;
+
+			 if (!bDeviceOpening)
+			 {
+				 HandheldActor->SetActorHiddenInGame(true);
+			 }
+		 }
+	 }
 }
 
 void ATestCharacter::InteractCheck()
@@ -326,4 +363,56 @@ void ATestCharacter::RemoveItem(const FItemData& Data)
     {
         InventoryWidget->RefreshInventory(Inventory);
     }
+}
+
+void ATestCharacter::SpawnAndAttachHandheld()
+{
+	if (HandheldActor) return;
+
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.Instigator = this;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	HandheldActor = GetWorld()->SpawnActor<AActor>(HandheldClass, FTransform::Identity, Params);
+
+	HandheldActor->AttachToComponent(
+		FirstPersonCameraComponent,
+		FAttachmentTransformRules::SnapToTargetNotIncludingScale
+	);
+
+	HandheldActor->SetActorRelativeLocation(HandheldOffset);
+	HandheldActor->SetActorRelativeRotation(HandheldRotation);
+
+	HandheldActor->SetActorEnableCollision(false);
+
+	FVector Loc = HandheldOffset;
+	Loc.Z = DeviceStartZ;
+	HandheldActor->SetActorRelativeLocation(Loc);
+}
+
+void ATestCharacter::ToggleDevice()
+{
+	SpawnAndAttachHandheld();     
+
+	if (bDeviceAnimating) return;
+
+	bDeviceOpening = HandheldActor->IsHidden();
+	bDeviceAnimating = true;
+	DeviceAnimTime = 0.f;
+
+	if (bDeviceOpening)
+	{
+		HandheldActor->SetActorHiddenInGame(false);
+
+		FVector Loc = HandheldOffset;
+		Loc.Z = DeviceStartZ;
+		HandheldActor->SetActorRelativeLocation(Loc);
+	}
+	else
+	{
+		FVector Loc = HandheldOffset;
+		Loc.Z = DeviceTargetZ;
+		HandheldActor->SetActorRelativeLocation(Loc);
+	}
 }
