@@ -3,9 +3,9 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class DARKEditorTarget : TargetRules
+public class DarkEditorTarget : TargetRules
 {
-	public DARKEditorTarget(TargetInfo Target) : base(Target)
+	public DarkEditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
