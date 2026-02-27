@@ -3,9 +3,9 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class DARKTarget : TargetRules
+public class DarkTarget : TargetRules
 {
-	public DARKTarget(TargetInfo Target) : base(Target)
+	public DarkTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V5;

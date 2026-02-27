@@ -64,6 +64,11 @@ ADARKCharacter::ADARKCharacter()
 
 void ADARKCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {	
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	UE_LOG(LogTemp, Warning, TEXT("SetupPlayerInputComponent CALLED. PlayerInputComponent=%s"),
+		*GetNameSafe(PlayerInputComponent));
+
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
@@ -80,6 +85,9 @@ void ADARKCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ADARKCharacter::Interact);
 
 		EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Started, this, &ADARKCharacter::ToggleInventory);
+
+		// Toggle device
+		EnhancedInputComponent->BindAction(DeviceAction, ETriggerEvent::Started, this, &ADARKCharacter::ToggleDevice);
 	}
 	else
 	{
@@ -114,6 +122,12 @@ void ADARKCharacter::BeginPlay()
 
 
 			bUIReady = true;
+	}
+
+	SpawnAndAttachHandheld();
+	if (HandheldActor)
+	{
+		HandheldActor->SetActorHiddenInGame(true);
 	}
 }
 
@@ -179,6 +193,31 @@ void ADARKCharacter::Tick(float DeltaTime)
      {
 		InteractCheck();
      }
+
+	 if (bDeviceAnimating && HandheldActor)
+	 {
+		 DeviceAnimTime += DeltaTime;
+
+		 const float Alpha = FMath::Clamp(DeviceAnimTime / DeviceAnimDuration, 0.f, 1.f);
+
+		 const float NewZ = bDeviceOpening
+			 ? FMath::Lerp(DeviceStartZ, DeviceTargetZ, Alpha)
+			 : FMath::Lerp(DeviceTargetZ, DeviceStartZ, Alpha);
+
+		 FVector Loc = HandheldOffset;
+		 Loc.Z = NewZ;
+		 HandheldActor->SetActorRelativeLocation(Loc);
+
+		 if (Alpha >= 1.f)
+		 {
+			 bDeviceAnimating = false;
+
+			 if (!bDeviceOpening)
+			 {
+				 HandheldActor->SetActorHiddenInGame(true);
+			 }
+		 }
+	 }
 }
 
 void ADARKCharacter::InteractCheck()
@@ -326,4 +365,82 @@ void ADARKCharacter::RemoveItem(const FItemData& Data)
     {
         InventoryWidget->RefreshInventory(Inventory);
     }
+}
+
+void ADARKCharacter::SpawnAndAttachHandheld()
+{
+	if (HandheldActor) return;
+
+	if (!HandheldClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("HandheldClass is NULL (check Details panel / BP class assignment)."));
+		return;
+	}
+
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.Instigator = this;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	HandheldActor = GetWorld()->SpawnActor<AActor>(HandheldClass, FTransform::Identity, Params);
+
+	if (!HandheldActor)
+	{
+		UE_LOG(LogTemp, Error, TEXT("SpawnActor FAILED for HandheldClass=%s"), *GetNameSafe(HandheldClass));
+		return;
+	}
+
+	HandheldActor->AttachToComponent(
+		FirstPersonCameraComponent,
+		FAttachmentTransformRules::SnapToTargetNotIncludingScale
+	);
+
+	HandheldActor->SetActorRelativeLocation(HandheldOffset);
+	HandheldActor->SetActorRelativeRotation(HandheldRotation);
+
+	HandheldActor->SetActorEnableCollision(false);
+
+	FVector Loc = HandheldOffset;
+	Loc.Z = DeviceStartZ;
+	HandheldActor->SetActorRelativeLocation(Loc);
+
+	UE_LOG(LogTemp, Warning, TEXT("SpawnAndAttachHandheld. Class=%s Spawned=%s"),
+		*GetNameSafe(HandheldClass),
+		*GetNameSafe(HandheldActor));
+}
+
+void ADARKCharacter::ToggleDevice()
+{
+	UE_LOG(LogTemp, Warning, TEXT("ToggleDevice CALLED. HandheldActor=%s Hidden=%d"),
+		*GetNameSafe(HandheldActor),
+		HandheldActor ? HandheldActor->IsHidden() : -1);
+
+	SpawnAndAttachHandheld();
+
+	if (!HandheldActor)
+	{
+		UE_LOG(LogTemp, Error, TEXT("HandheldActor is NULL after spawn attempt."));
+		return;
+	}
+
+	if (bDeviceAnimating) return;
+
+	bDeviceOpening = HandheldActor->IsHidden();
+	bDeviceAnimating = true;
+	DeviceAnimTime = 0.f;
+
+	if (bDeviceOpening)
+	{
+		HandheldActor->SetActorHiddenInGame(false);
+
+		FVector Loc = HandheldOffset;
+		Loc.Z = DeviceStartZ;
+		HandheldActor->SetActorRelativeLocation(Loc);
+	}
+	else
+	{
+		FVector Loc = HandheldOffset;
+		Loc.Z = DeviceTargetZ;
+		HandheldActor->SetActorRelativeLocation(Loc);
+	}
 }
