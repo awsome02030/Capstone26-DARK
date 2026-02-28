@@ -9,6 +9,7 @@
 #include "InventoryWidget.h"
 #include "Blueprint/IUserObjectListEntry.h"
 #include "Blueprint/UserWidget.h"
+#include "TimerManager.h"
 #include "DARKCharacter.generated.h"
 
 class UInputComponent;
@@ -94,6 +95,8 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Device")
 	float DeviceTargetZ = 0.f;
 
+	FTimerHandle OxygenTimerHandle;
+
 	float DeviceAnimTime = 0.f;
 	bool bDeviceAnimating = false;
 	bool bDeviceOpening = false;
@@ -111,6 +114,9 @@ public:
 
 	UPROPERTY()
 	UInventoryWidget* InventoryWidget;
+
+	UPROPERTY(BlueprintReadOnly)
+	int Oxygen = 100;
 
 protected:
 	void BeginPlay();
@@ -143,6 +149,7 @@ protected:
 	void InteractCheck();
 	void ToggleInventory();
 	void RemoveItem(const FItemData& data);
+	void OxygenCountdown();
 
 	FHitResult InteractHitResult;
 

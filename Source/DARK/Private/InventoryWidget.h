@@ -10,7 +10,7 @@
 class UListView;
 
 UCLASS()
-class UInventoryWidget : public UUserWidget
+class DARK_API UInventoryWidget : public UUserWidget
 {
 	GENERATED_BODY()
 	

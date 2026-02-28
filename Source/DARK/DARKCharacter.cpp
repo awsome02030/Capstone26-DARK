@@ -11,6 +11,7 @@
 #include "InventoryWidget.h"
 #include "InventoryEntry.h"
 #include "ItemDatabase.h"
+#include "OxygenTank.h"
 #include "DARKPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "InputMappingContext.h"
@@ -22,6 +23,8 @@
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/TextBlock.h"
+#include "TimerManager.h"
+#include "Math/UnrealMathUtility.h"
 #include "../../../../../../UE_5.6/Engine/Plugins/VirtualProduction/TextureShare/Source/TextureShareCore/Private/Module/TextureShareCoreLogDefines.h"
 
 bool bUIReady = false;
@@ -129,6 +132,14 @@ void ADARKCharacter::BeginPlay()
 	{
 		HandheldActor->SetActorHiddenInGame(true);
 	}
+	
+	GetWorld()->GetTimerManager().SetTimer(
+		OxygenTimerHandle,
+		this,
+		&ADARKCharacter::OxygenCountdown,
+		2,
+		true
+	);
 }
 
 void ADARKCharacter::MoveInput(const FInputActionValue& Value)
@@ -222,25 +233,25 @@ void ADARKCharacter::Tick(float DeltaTime)
 
 void ADARKCharacter::InteractCheck()
 {
-    if (!IsValid(InteractWidget)) return;
+	if (!IsValid(InteractWidget)) return;
 
-    FHitResult Hit;
-    const float TraceDistance = 250.f;
+	FHitResult Hit;
+	const float TraceDistance = 250.f;
 
-    FVector Start = FirstPersonCameraComponent->GetComponentLocation();
-    FVector End = Start + FirstPersonCameraComponent->GetForwardVector() * TraceDistance;
+	FVector Start = FirstPersonCameraComponent->GetComponentLocation();
+	FVector End = Start + FirstPersonCameraComponent->GetForwardVector() * TraceDistance;
 
 	InteractVectorEnd = End;
 
 	FCollisionQueryParams Params;
-    Params.AddIgnoredActor(this);
+	Params.AddIgnoredActor(this);
 
-    bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_GameTraceChannel1, Params);
+	bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_GameTraceChannel1, Params);
 
-    // DrawDebugLine(GetWorld(), Start, End, bHit ? FColor::Green : FColor::Red, false, 0.f, 0, 1.f);
+	// DrawDebugLine(GetWorld(), Start, End, bHit ? FColor::Green : FColor::Red, false, 0.f, 0, 1.f);
 
-    // Show widget if we hit an AItem
-    if (bHit && Hit.GetActor() && (Hit.GetActor()->IsA<AItem>() || Hit.GetActor()->IsA<APuzzleInteractable>()))
+	// Show widget if we hit an AItem
+	if (bHit && Hit.GetActor() && (Hit.GetActor()->IsA<AItem>() || Hit.GetActor()->IsA<APuzzleInteractable>() || Hit.GetActor()->IsA<AOxygenTank>()))
     {
         InteractWidget->SetVisibility(ESlateVisibility::Visible);
         InteractHitResult = Hit;
@@ -278,6 +289,16 @@ void ADARKCharacter::Interact()
 
 		if (Check->requredItems.Num() == 0) {
 			Check->OnPuzzleComplete();
+		}
+	}
+	else if (AOxygenTank* Tank = Cast<AOxygenTank>(InteractHitResult.GetActor())) {
+		Tank->Destroy();
+
+		if (Oxygen + Tank->Oxygen > 100) {
+			Oxygen = 100;
+		}
+		else {
+			Oxygen += Tank->Oxygen;
 		}
 	}
 }
@@ -442,5 +463,14 @@ void ADARKCharacter::ToggleDevice()
 		FVector Loc = HandheldOffset;
 		Loc.Z = DeviceTargetZ;
 		HandheldActor->SetActorRelativeLocation(Loc);
+	}
+}
+
+void ADARKCharacter::OxygenCountdown()
+{
+	Oxygen = FMath::Clamp(Oxygen - 1, 0, 100);
+	
+	if (Oxygen == 0) {
+		//Added later
 	}
 }
