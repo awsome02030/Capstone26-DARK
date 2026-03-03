@@ -78,3 +78,24 @@ void AGridManager::SpawnRooms()
         }
     }
 }
+
+void AGridManager::ClearGrid()
+{
+    for (auto& Pair : SpawnedRooms)
+    {
+        if (IsValid(Pair.Value))
+        {
+            Pair.Value->Destroy();
+        }
+    }
+
+    SpawnedRooms.Empty();
+}
+
+void AGridManager::ResetGrid()
+{
+    UE_LOG(LogTemp, Warning, TEXT("Resetting Grid"));
+
+    ClearGrid();
+    SpawnRooms();
+}

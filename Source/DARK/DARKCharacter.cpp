@@ -24,6 +24,9 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/TextBlock.h"
 #include "TimerManager.h"
+#include "GridManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "EngineUtils.h"
 #include "Math/UnrealMathUtility.h"
 #include "../../../../../../UE_5.6/Engine/Plugins/VirtualProduction/TextureShare/Source/TextureShareCore/Private/Module/TextureShareCoreLogDefines.h"
 
@@ -91,6 +94,9 @@ void ADARKCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 		// Toggle device
 		EnhancedInputComponent->BindAction(DeviceAction, ETriggerEvent::Started, this, &ADARKCharacter::ToggleDevice);
+
+		// Trying out "b" to kill player
+		EnhancedInputComponent->BindAction(DebugKillAction, ETriggerEvent::Started, this, &ADARKCharacter::Die);
 	}
 	else
 	{
@@ -101,6 +107,12 @@ void ADARKCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 void ADARKCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	SpawnLocation = GetActorLocation();
+	Health = MaxHealth;
+
+	GridManagerRef = Cast<AGridManager>(
+		UGameplayStatics::GetActorOfClass(GetWorld(), AGridManager::StaticClass())
+	);
 
 	if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
 	{
@@ -471,6 +483,61 @@ void ADARKCharacter::OxygenCountdown()
 	Oxygen = FMath::Clamp(Oxygen - 1, 0, 100);
 	
 	if (Oxygen == 0) {
-		//Added later
+		TakeDamagePlayer(MaxHealth);
 	}
+}
+
+void ADARKCharacter::TakeDamagePlayer(float DamageAmount)
+{
+	Health -= DamageAmount;
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("Player damage: %f, Current Health: %f"),
+		DamageAmount,
+		Health);
+
+	if (Health <= 0.f)
+	{
+		Die();
+	}
+}
+
+void ADARKCharacter::Die()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Player Died"));
+
+	GetCharacterMovement()->DisableMovement();
+	GetController()->SetIgnoreMoveInput(true);
+	GetController()->SetIgnoreLookInput(true);
+
+	SetActorHiddenInGame(true);
+
+	FTimerHandle RespawnTimer;
+	GetWorld()->GetTimerManager().SetTimer(
+		RespawnTimer,
+		this,
+		&ADARKCharacter::Respawn,
+		2.0f,
+		false
+	);
+}
+
+void ADARKCharacter::Respawn()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Respawning Player"));
+
+	Health = MaxHealth;
+	Oxygen = 100;
+
+	if (GridManagerRef)
+	{
+		GridManagerRef->ResetGrid();
+	}
+
+	SetActorLocation(SpawnLocation);
+
+	SetActorHiddenInGame(false);
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	GetController()->SetIgnoreMoveInput(false);
+	GetController()->SetIgnoreLookInput(false);
 }

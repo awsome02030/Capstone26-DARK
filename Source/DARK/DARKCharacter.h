@@ -10,6 +10,7 @@
 #include "Blueprint/IUserObjectListEntry.h"
 #include "Blueprint/UserWidget.h"
 #include "TimerManager.h"
+#include "GridManager.h"
 #include "DARKCharacter.generated.h"
 
 class UInputComponent;
@@ -62,6 +63,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	UInputAction* DeviceAction;
+
+	// Testing the Kill with "b"
+	UPROPERTY(EditDefaultsOnly)
+	UInputAction* DebugKillAction;
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UUserWidget> InteractWidgetClass;
@@ -117,6 +122,19 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	int Oxygen = 100;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+	float MaxHealth = 100.f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")
+	float Health;
+
+	void TakeDamagePlayer(float DamageAmount);
+	void Die();
+	void Respawn();
+
+	FVector SpawnLocation;
+	AGridManager* GridManagerRef = nullptr;
 
 protected:
 	void BeginPlay();

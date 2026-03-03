@@ -11,6 +11,9 @@ class DARK_API AGridManager : public AActor
 public:
     AGridManager();
 
+    UFUNCTION()
+    void ResetGrid();
+
 protected:
     virtual void BeginPlay() override;
 
@@ -31,4 +34,6 @@ private:
 
     void SpawnRooms();
     FVector GridToWorld(const FIntPoint& GridPos) const;
+
+    void ClearGrid();
 };
