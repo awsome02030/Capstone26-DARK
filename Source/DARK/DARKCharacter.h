@@ -69,6 +69,9 @@ protected:
 	UInputAction* DebugKillAction;
 
 	UPROPERTY(EditDefaultsOnly)
+	UInputAction* GravAction;
+
+	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UUserWidget> InteractWidgetClass;
 	UPROPERTY()
 	UUserWidget* InteractWidget;
@@ -132,6 +135,8 @@ public:
 	void TakeDamagePlayer(float DamageAmount);
 	void Die();
 	void Respawn();
+	
+	void GravChange();
 
 	FVector SpawnLocation;
 	AGridManager* GridManagerRef = nullptr;
@@ -170,6 +175,7 @@ protected:
 	void OxygenCountdown();
 
 	FHitResult InteractHitResult;
+	int grav = 0;
 
 protected:
 

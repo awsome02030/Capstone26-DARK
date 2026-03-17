@@ -97,6 +97,8 @@ void ADARKCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 		// Trying out "b" to kill player
 		EnhancedInputComponent->BindAction(DebugKillAction, ETriggerEvent::Started, this, &ADARKCharacter::Die);
+
+		EnhancedInputComponent->BindAction(GravAction, ETriggerEvent::Started, this, &ADARKCharacter::GravChange);
 	}
 	else
 	{
@@ -540,4 +542,30 @@ void ADARKCharacter::Respawn()
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 	GetController()->SetIgnoreMoveInput(false);
 	GetController()->SetIgnoreLookInput(false);
+}
+
+void ADARKCharacter::GravChange()
+{
+	UCharacterMovementComponent* move = GetCharacterMovement();
+
+	if (move) {
+		if (grav == 0) {
+			move->GravityScale = 1.0;
+			move->JumpZVelocity = 420.0;
+			move->MaxWalkSpeed = 480.0;
+			move->MaxAcceleration = 2048.0;
+			move->BrakingDecelerationWalking = 2048.0;
+
+			grav = 1;
+		}
+		else {
+			move->GravityScale = 0.067;
+			move->JumpZVelocity = 120.0;
+			move->MaxWalkSpeed = 240.0;
+			move->MaxAcceleration = 250.0;
+			move->BrakingDecelerationWalking = 0.0;
+
+			grav = 0;
+		}
+	}
 }
