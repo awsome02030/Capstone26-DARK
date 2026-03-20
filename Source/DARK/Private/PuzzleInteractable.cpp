@@ -2,11 +2,20 @@
 
 
 #include "PuzzleInteractable.h"
+#include "PuzzleDoor.h"
 
 void APuzzleInteractable::OnPuzzleComplete()
 {
-	for (APuzzleDoor* Door : TiedClass) {
-		Door->Destroy();
+	for (AActor* Actor : TiedClass) 
+	{
+		
+		APuzzleDoor* Door = Cast<APuzzleDoor>(Actor);
+
+		if (Door)
+		{
+
+			Door->OpenDoor();
+		}
 	}
 
 	Destroy();

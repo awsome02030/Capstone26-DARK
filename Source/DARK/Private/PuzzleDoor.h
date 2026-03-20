@@ -13,5 +13,8 @@ UCLASS()
 class APuzzleDoor : public AStaticMeshActor
 {
 	GENERATED_BODY()
-	
+
+public:
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Door")
+	void OpenDoor();
 };

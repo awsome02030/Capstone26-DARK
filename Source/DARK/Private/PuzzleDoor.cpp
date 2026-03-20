@@ -3,3 +3,7 @@
 
 #include "PuzzleDoor.h"
 
+void APuzzleDoor::OpenDoor_Implementation()
+{
+
+}

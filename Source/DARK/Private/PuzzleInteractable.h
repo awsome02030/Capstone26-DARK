@@ -21,8 +21,8 @@ class APuzzleInteractable : public AStaticMeshActor
 public:
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Puzzle")
 	TArray<FItemData> requredItems;
-	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Puzzle")
-	TArray<class APuzzleDoor*> TiedClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Puzzle")
+	TArray<AActor*> TiedClass;
 	UFUNCTION(BlueprintCallable)
 	void OnPuzzleComplete();
 };
