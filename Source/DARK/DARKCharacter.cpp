@@ -99,6 +99,9 @@ void ADARKCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(DebugKillAction, ETriggerEvent::Started, this, &ADARKCharacter::Die);
 
 		EnhancedInputComponent->BindAction(GravAction, ETriggerEvent::Started, this, &ADARKCharacter::GravChange);
+
+		// For the PauseMenu
+		EnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Started, this, &ADARKCharacter::TogglePauseMenu);
 	}
 	else
 	{
@@ -109,6 +112,7 @@ void ADARKCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 void ADARKCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
 	SpawnLocation = GetActorLocation();
 	Health = MaxHealth;
 
@@ -120,8 +124,6 @@ void ADARKCharacter::BeginPlay()
 	{
 		if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("PC: %s, Local? %d"), *GetNameSafe(PC), PC ? PC->IsLocalController() : 0);
-
 			if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
 				LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
 			{
@@ -129,16 +131,15 @@ void ADARKCharacter::BeginPlay()
 			}
 		}
 
-			InteractWidget = CreateWidget<UUserWidget>(PC, InteractWidgetClass);
-			InteractWidget->AddToPlayerScreen();
-			InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
+		InteractWidget = CreateWidget<UUserWidget>(PC, InteractWidgetClass);
+		InteractWidget->AddToPlayerScreen();
+		InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
 
-			InventoryWidget = CreateWidget < UInventoryWidget>(PC, InventoryWidgetClass);
-			InventoryWidget->AddToPlayerScreen();
-			InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
+		InventoryWidget = CreateWidget<UInventoryWidget>(PC, InventoryWidgetClass);
+		InventoryWidget->AddToPlayerScreen();
+		InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
 
-
-			bUIReady = true;
+		bUIReady = true;
 	}
 
 	SpawnAndAttachHandheld();
@@ -146,7 +147,7 @@ void ADARKCharacter::BeginPlay()
 	{
 		HandheldActor->SetActorHiddenInGame(true);
 	}
-	
+
 	GetWorld()->GetTimerManager().SetTimer(
 		OxygenTimerHandle,
 		this,
@@ -389,6 +390,54 @@ void ADARKCharacter::ToggleInventory()
     }
 }
 
+void ADARKCharacter::TogglePauseMenu()
+{
+	ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
+	if (!PC) return;
+
+	if (!PauseMenuWidget)
+	{
+		if (!PauseMenuClass)
+		{
+			UE_LOG(LogTemp, Error, TEXT("PauseMenuClass not assigned!"));
+			return;
+		}
+
+		PauseMenuWidget = CreateWidget<UUserWidget>(PC, PauseMenuClass);
+		PauseMenuWidget->AddToPlayerScreen();
+		PauseMenuWidget->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	bIsPaused = !bIsPaused;
+	PauseMenuWidget->SetVisibility(bIsPaused ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+
+	if (bIsPaused)
+	{
+		UGameplayStatics::SetGamePaused(GetWorld(), true);
+
+		FInputModeUIOnly InputMode;
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		PC->SetInputMode(InputMode);
+		PC->bShowMouseCursor = true;
+
+		GetCharacterMovement()->StopMovementImmediately();
+		GetController()->SetIgnoreMoveInput(true);
+		GetController()->SetIgnoreLookInput(true);
+	}
+	else
+	{
+		UGameplayStatics::SetGamePaused(GetWorld(), false);
+
+		FInputModeGameOnly InputMode;
+		PC->SetInputMode(InputMode);
+		PC->bShowMouseCursor = false;
+
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		GetController()->SetIgnoreMoveInput(false);
+		GetController()->SetIgnoreLookInput(false);
+	}
+}
+
 void ADARKCharacter::RemoveItem(const FItemData& Data)
 {
     Inventory.RemoveAll([&](const FItemData& Item)
@@ -526,18 +575,16 @@ void ADARKCharacter::Die()
 
 void ADARKCharacter::Respawn()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Respawning Player"));
-
 	Health = MaxHealth;
 	Oxygen = 100;
+	bIsPaused = false; 
+
+	UGameplayStatics::SetGamePaused(GetWorld(), false);
 
 	if (GridManagerRef)
-	{
 		GridManagerRef->ResetGrid();
-	}
 
 	SetActorLocation(SpawnLocation);
-
 	SetActorHiddenInGame(false);
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 	GetController()->SetIgnoreMoveInput(false);

@@ -72,12 +72,16 @@ protected:
 	UInputAction* GravAction;
 
 	UPROPERTY(EditDefaultsOnly)
+	UInputAction* PauseAction;
+
+	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UUserWidget> InteractWidgetClass;
-	UPROPERTY()
-	UUserWidget* InteractWidget;
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UUserWidget> InventoryWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> PauseMenuClass;
 
 	UPROPERTY(EditDefaultsOnly)
 	UItemDatabase* ItemDatabase;
@@ -87,6 +91,12 @@ protected:
 
 	UPROPERTY()
 	AActor* HandheldActor = nullptr;
+
+	UPROPERTY()
+	UUserWidget* InteractWidget = nullptr;
+
+	UPROPERTY()
+	UUserWidget* PauseMenuWidget = nullptr;
 
 	UPROPERTY(EditAnywhere, Category = "Device")
 	FVector HandheldOffset = FVector(30.f, 12.f, -15.f);
@@ -108,6 +118,7 @@ protected:
 	float DeviceAnimTime = 0.f;
 	bool bDeviceAnimating = false;
 	bool bDeviceOpening = false;
+	bool bIsPaused = false;
 
 	void SpawnAndAttachHandheld();
 	void ToggleDevice();
@@ -121,7 +132,7 @@ public:
 	TArray<FItemData> Inventory;
 
 	UPROPERTY()
-	UInventoryWidget* InventoryWidget;
+	UInventoryWidget* InventoryWidget = nullptr;
 
 	UPROPERTY(BlueprintReadOnly)
 	int Oxygen = 100;
@@ -135,7 +146,7 @@ public:
 	void TakeDamagePlayer(float DamageAmount);
 	void Die();
 	void Respawn();
-	
+	void TogglePauseMenu();
 	void GravChange();
 
 	FVector SpawnLocation;
