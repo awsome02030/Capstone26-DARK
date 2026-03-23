@@ -7,6 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "ItemDatabase.h"
 #include "InventoryWidget.h"
+#include "RoomSelectWidget.h"
 #include "Blueprint/IUserObjectListEntry.h"
 #include "Blueprint/UserWidget.h"
 #include "TimerManager.h"
@@ -32,11 +33,11 @@ class ADARKCharacter : public ACharacter
 	GENERATED_BODY()
 
 	/** Pawn mesh: first person view (arms; seen only by self) */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* FirstPersonMesh;
 
 	/** First person camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FirstPersonCameraComponent;
 
 protected:
@@ -83,6 +84,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UUserWidget> PauseMenuClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<URoomSelectWidget> RoomSelectWidgetClass;
+
 	UPROPERTY(EditDefaultsOnly)
 	UItemDatabase* ItemDatabase;
 
@@ -97,6 +101,9 @@ protected:
 
 	UPROPERTY()
 	UUserWidget* PauseMenuWidget = nullptr;
+
+	UPROPERTY()
+	URoomSelectWidget* RoomSelectWidget = nullptr;
 
 	UPROPERTY(EditAnywhere, Category = "Device")
 	FVector HandheldOffset = FVector(30.f, 12.f, -15.f);
@@ -149,6 +156,11 @@ public:
 	void TogglePauseMenu();
 	void GravChange();
 
+	void ShowRoomSelectWidget(const TArray<FRoomData>& Choices);
+
+	UFUNCTION()
+	void OnRoomChosen(int32 ChosenIndex);
+
 	FVector SpawnLocation;
 	AGridManager* GridManagerRef = nullptr;
 
@@ -162,19 +174,19 @@ protected:
 	void LookInput(const FInputActionValue& Value);
 
 	/** Handles aim inputs from either controls or UI interfaces */
-	UFUNCTION(BlueprintCallable, Category="Input")
+	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoAim(float Yaw, float Pitch);
 
 	/** Handles move inputs from either controls or UI interfaces */
-	UFUNCTION(BlueprintCallable, Category="Input")
+	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoMove(float Right, float Forward);
 
 	/** Handles jump start inputs from either controls or UI interfaces */
-	UFUNCTION(BlueprintCallable, Category="Input")
+	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoJumpStart();
 
 	/** Handles jump end inputs from either controls or UI interfaces */
-	UFUNCTION(BlueprintCallable, Category="Input")
+	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoJumpEnd();
 
 	bool PerformInteractTrace(FHitResult& OutHit, float TraceDistance = 1000.f) const;
@@ -192,7 +204,6 @@ protected:
 
 	/** Set up input action bindings */
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
-	
 
 public:
 

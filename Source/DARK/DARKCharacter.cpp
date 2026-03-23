@@ -25,6 +25,7 @@
 #include "Components/TextBlock.h"
 #include "TimerManager.h"
 #include "GridManager.h"
+#include "RoomSelectWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "EngineUtils.h"
 #include "Math/UnrealMathUtility.h"
@@ -36,7 +37,7 @@ ADARKCharacter::ADARKCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
-	
+
 	// Create the first person mesh that will be viewed only by this character's owner
 	FirstPersonMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("First Person Mesh"));
 
@@ -47,7 +48,6 @@ ADARKCharacter::ADARKCharacter()
 
 	// Create the Camera Component	
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("First Person Camera"));
-	//FirstPersonCameraComponent->SetupAttachment(FirstPersonMesh, FName("head"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
 	FirstPersonCameraComponent->SetRelativeRotation(FRotator(0.0f, 90.0f, -90.0f));
 	FirstPersonCameraComponent->SetRelativeLocation(FVector(0.f, 0.f, 64.f));
@@ -69,43 +69,28 @@ ADARKCharacter::ADARKCharacter()
 }
 
 void ADARKCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{	
+{
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	UE_LOG(LogTemp, Warning, TEXT("SetupPlayerInputComponent CALLED. PlayerInputComponent=%s"),
 		*GetNameSafe(PlayerInputComponent));
 
-	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		// Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ADARKCharacter::DoJumpStart);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ADARKCharacter::DoJumpEnd);
-
-		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ADARKCharacter::MoveInput);
-
-		// Looking/Aiming
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ADARKCharacter::LookInput);
-
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ADARKCharacter::Interact);
-
 		EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Started, this, &ADARKCharacter::ToggleInventory);
-
-		// Toggle device
 		EnhancedInputComponent->BindAction(DeviceAction, ETriggerEvent::Started, this, &ADARKCharacter::ToggleDevice);
-
-		// Trying out "b" to kill player
 		EnhancedInputComponent->BindAction(DebugKillAction, ETriggerEvent::Started, this, &ADARKCharacter::Die);
-
 		EnhancedInputComponent->BindAction(GravAction, ETriggerEvent::Started, this, &ADARKCharacter::GravChange);
-
-		// For the PauseMenu
 		EnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Started, this, &ADARKCharacter::TogglePauseMenu);
 	}
 	else
 	{
-		UE_LOG(LogDARK, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
+		UE_LOG(LogDARK, Error, TEXT("'%s' Failed to find an Enhanced Input Component!"), *GetNameSafe(this));
 	}
 }
 
@@ -157,33 +142,76 @@ void ADARKCharacter::BeginPlay()
 	);
 }
 
+void ADARKCharacter::ShowRoomSelectWidget(const TArray<FRoomData>& Choices)
+{
+	ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
+	if (!PC)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ShowRoomSelectWidget: No PlayerController found!"));
+		return;
+	}
+
+	if (!RoomSelectWidgetClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ShowRoomSelectWidget: RoomSelectWidgetClass not set on character!"));
+		return;
+	}
+
+	RoomSelectWidget = CreateWidget<URoomSelectWidget>(PC, RoomSelectWidgetClass);
+	if (!RoomSelectWidget)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ShowRoomSelectWidget: Failed to create widget!"));
+		return;
+	}
+
+	RoomSelectWidget->OnRoomSelected.AddDynamic(this, &ADARKCharacter::OnRoomChosen);
+	RoomSelectWidget->AddToPlayerScreen(10);
+	RoomSelectWidget->SetupRoomButtons(Choices);
+
+	PC->bShowMouseCursor = true;
+	FInputModeUIOnly InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	PC->SetInputMode(InputMode);
+
+	UE_LOG(LogTemp, Warning, TEXT("ShowRoomSelectWidget: Widget created and added to player screen"));
+}
+
+void ADARKCharacter::OnRoomChosen(int32 ChosenIndex)
+{
+	if (GridManagerRef)
+		GridManagerRef->OnRoomChosen(ChosenIndex);
+
+	ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
+	if (PC)
+	{
+		PC->bShowMouseCursor = false;
+		PC->SetInputMode(FInputModeGameOnly());
+	}
+
+	if (RoomSelectWidget)
+	{
+		RoomSelectWidget->RemoveFromParent();
+		RoomSelectWidget = nullptr;
+	}
+}
+
 void ADARKCharacter::MoveInput(const FInputActionValue& Value)
 {
-	// get the Vector2D move axis
 	FVector2D MovementVector = Value.Get<FVector2D>();
-
-	// pass the axis values to the move input
 	DoMove(MovementVector.X, MovementVector.Y);
-
 }
 
 void ADARKCharacter::LookInput(const FInputActionValue& Value)
 {
-	// get the Vector2D look axis
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
-
-	// pass the axis values to the aim input
 	DoAim(LookAxisVector.X, LookAxisVector.Y);
-
 }
 
 void ADARKCharacter::DoAim(float Yaw, float Pitch)
 {
 	if (GetController())
 	{
-		// pass the rotation inputs
 		float Sensitivity = 4.f;
-
 		AddControllerYawInput(Yaw * Sensitivity);
 		AddControllerPitchInput(Pitch);
 	}
@@ -193,7 +221,6 @@ void ADARKCharacter::DoMove(float Right, float Forward)
 {
 	if (GetController())
 	{
-		// pass the move inputs
 		AddMovementInput(GetActorRightVector(), Right);
 		AddMovementInput(GetActorForwardVector(), Forward);
 	}
@@ -201,13 +228,11 @@ void ADARKCharacter::DoMove(float Right, float Forward)
 
 void ADARKCharacter::DoJumpStart()
 {
-	// pass Jump to the character
 	Jump();
 }
 
 void ADARKCharacter::DoJumpEnd()
 {
-	// pass StopJumping to the character
 	StopJumping();
 }
 
@@ -215,35 +240,35 @@ void ADARKCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	 if (bUIReady)
-     {
+	if (bUIReady)
+	{
 		InteractCheck();
-     }
+	}
 
-	 if (bDeviceAnimating && HandheldActor)
-	 {
-		 DeviceAnimTime += DeltaTime;
+	if (bDeviceAnimating && HandheldActor)
+	{
+		DeviceAnimTime += DeltaTime;
 
-		 const float Alpha = FMath::Clamp(DeviceAnimTime / DeviceAnimDuration, 0.f, 1.f);
+		const float Alpha = FMath::Clamp(DeviceAnimTime / DeviceAnimDuration, 0.f, 1.f);
 
-		 const float NewZ = bDeviceOpening
-			 ? FMath::Lerp(DeviceStartZ, DeviceTargetZ, Alpha)
-			 : FMath::Lerp(DeviceTargetZ, DeviceStartZ, Alpha);
+		const float NewZ = bDeviceOpening
+			? FMath::Lerp(DeviceStartZ, DeviceTargetZ, Alpha)
+			: FMath::Lerp(DeviceTargetZ, DeviceStartZ, Alpha);
 
-		 FVector Loc = HandheldOffset;
-		 Loc.Z = NewZ;
-		 HandheldActor->SetActorRelativeLocation(Loc);
+		FVector Loc = HandheldOffset;
+		Loc.Z = NewZ;
+		HandheldActor->SetActorRelativeLocation(Loc);
 
-		 if (Alpha >= 1.f)
-		 {
-			 bDeviceAnimating = false;
+		if (Alpha >= 1.f)
+		{
+			bDeviceAnimating = false;
 
-			 if (!bDeviceOpening)
-			 {
-				 HandheldActor->SetActorHiddenInGame(true);
-			 }
-		 }
-	 }
+			if (!bDeviceOpening)
+			{
+				HandheldActor->SetActorHiddenInGame(true);
+			}
+		}
+	}
 }
 
 void ADARKCharacter::InteractCheck()
@@ -263,19 +288,16 @@ void ADARKCharacter::InteractCheck()
 
 	bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_GameTraceChannel1, Params);
 
-	// DrawDebugLine(GetWorld(), Start, End, bHit ? FColor::Green : FColor::Red, false, 0.f, 0, 1.f);
-
-	// Show widget if we hit an AItem
 	if (bHit && Hit.GetActor() && (Hit.GetActor()->IsA<AItem>() || Hit.GetActor()->IsA<APuzzleInteractable>() || Hit.GetActor()->IsA<AOxygenTank>()))
-    {
-        InteractWidget->SetVisibility(ESlateVisibility::Visible);
-        InteractHitResult = Hit;
-    }
-    else
-    {
-        InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
-        InteractHitResult = FHitResult();
-    }
+	{
+		InteractWidget->SetVisibility(ESlateVisibility::Visible);
+		InteractHitResult = Hit;
+	}
+	else
+	{
+		InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
+		InteractHitResult = FHitResult();
+	}
 }
 
 void ADARKCharacter::Interact()
@@ -284,12 +306,11 @@ void ADARKCharacter::Interact()
 	{
 		if (Inventory.Num() <= 5) {
 			FItemData* Data = ItemDatabase->Items.FindByPredicate([&](const FItemData& ItemData) {
-			return ItemData.Class == InteractHitResult.GetActor()->GetClass();
-			});
+				return ItemData.Class == InteractHitResult.GetActor()->GetClass();
+				});
 
 			Inventory.Emplace(*Data);
 			InteractHitResult.GetActor()->Destroy();
-
 		}
 	}
 	else if (APuzzleInteractable* Check = Cast<APuzzleInteractable>(InteractHitResult.GetActor())) {
@@ -320,14 +341,14 @@ void ADARKCharacter::Interact()
 
 bool ADARKCharacter::PerformInteractTrace(FHitResult& OutHit, float TraceDistance) const
 {
-    if (!FirstPersonCameraComponent) return false;
+	if (!FirstPersonCameraComponent) return false;
 
-    FVector ViewVector = FirstPersonCameraComponent->GetComponentLocation();
-    FRotator ViewRotation = FirstPersonCameraComponent->GetComponentRotation();
-    FVector End = ViewVector + ViewRotation.Vector() * TraceDistance;
+	FVector ViewVector = FirstPersonCameraComponent->GetComponentLocation();
+	FRotator ViewRotation = FirstPersonCameraComponent->GetComponentRotation();
+	FVector End = ViewVector + ViewRotation.Vector() * TraceDistance;
 
-    FCollisionQueryParams Params;
-    Params.AddIgnoredActor(this);
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
 
 	DrawDebugLine(GetWorld(), ViewVector, End, FColor::Red, false, 1.1f, 0, 1.f);
 
@@ -336,58 +357,56 @@ bool ADARKCharacter::PerformInteractTrace(FHitResult& OutHit, float TraceDistanc
 		DrawDebugSphere(GetWorld(), OutHit.ImpactPoint, 10.f, 12, FColor::Green, false, 1.0f);
 	}
 
-    return GetWorld()->LineTraceSingleByChannel(
-        OutHit,
-        ViewVector,
-        End,
-        ECC_GameTraceChannel1,
-        Params
-    );
+	return GetWorld()->LineTraceSingleByChannel(
+		OutHit,
+		ViewVector,
+		End,
+		ECC_GameTraceChannel1,
+		Params
+	);
 }
 
 void ADARKCharacter::ToggleInventory()
 {
-    ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
-    if (!PC) return;
+	ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
+	if (!PC) return;
 
-    if (!InventoryWidget->IsVisible())
-    {
-        InventoryWidget->SetVisibility(ESlateVisibility::Visible);
-        InventoryWidget->RefreshInventory(Inventory);
+	if (!InventoryWidget->IsVisible())
+	{
+		InventoryWidget->SetVisibility(ESlateVisibility::Visible);
+		InventoryWidget->RefreshInventory(Inventory);
 
-        FInputModeGameAndUI InputMode;
-        InputMode.SetHideCursorDuringCapture(false);
-        PC->SetInputMode(InputMode);
-        PC->SetCinematicMode(true, true, true);
-        PC->bShowMouseCursor = true;
+		FInputModeGameAndUI InputMode;
+		InputMode.SetHideCursorDuringCapture(false);
+		PC->SetInputMode(InputMode);
+		PC->SetCinematicMode(true, true, true);
+		PC->bShowMouseCursor = true;
 
-        GetCharacterMovement()->StopMovementImmediately();
+		GetCharacterMovement()->StopMovementImmediately();
+		GetController()->SetIgnoreMoveInput(true);
+		GetController()->SetIgnoreLookInput(true);
+	}
+	else
+	{
+		InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
 
-        GetController()->SetIgnoreMoveInput(true);
-        GetController()->SetIgnoreLookInput(true);
-    }
-    else
-    {
-        InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->SetCinematicMode(false, false, false);
+		PC->bShowMouseCursor = false;
 
-        PC->SetInputMode(FInputModeGameOnly());
-        PC->SetCinematicMode(false, false, false);
-        PC->bShowMouseCursor = false;
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		GetController()->SetIgnoreMoveInput(false);
+		GetController()->SetIgnoreLookInput(false);
 
-        GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-
-        GetController()->SetIgnoreMoveInput(false);
-        GetController()->SetIgnoreLookInput(false);
-
-        if (ADARKPlayerController* PlayerController = Cast<ADARKPlayerController>(GetController()))
-        {
-            PlayerController->bShowMouseCursor = false;
-            PlayerController->SetInputMode(FInputModeGameOnly());
-            GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-            GetController()->SetIgnoreMoveInput(false);
-            GetController()->SetIgnoreLookInput(false);
-        }
-    }
+		if (ADARKPlayerController* PlayerController = Cast<ADARKPlayerController>(GetController()))
+		{
+			PlayerController->bShowMouseCursor = false;
+			PlayerController->SetInputMode(FInputModeGameOnly());
+			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+			GetController()->SetIgnoreMoveInput(false);
+			GetController()->SetIgnoreLookInput(false);
+		}
+	}
 }
 
 void ADARKCharacter::TogglePauseMenu()
@@ -440,15 +459,15 @@ void ADARKCharacter::TogglePauseMenu()
 
 void ADARKCharacter::RemoveItem(const FItemData& Data)
 {
-    Inventory.RemoveAll([&](const FItemData& Item)
-    {
-        return Item.ItemName == Data.ItemName;
-    });
+	Inventory.RemoveAll([&](const FItemData& Item)
+		{
+			return Item.ItemName == Data.ItemName;
+		});
 
-    if (InventoryWidget)
-    {
-        InventoryWidget->RefreshInventory(Inventory);
-    }
+	if (InventoryWidget)
+	{
+		InventoryWidget->RefreshInventory(Inventory);
+	}
 }
 
 void ADARKCharacter::SpawnAndAttachHandheld()
@@ -481,7 +500,6 @@ void ADARKCharacter::SpawnAndAttachHandheld()
 
 	HandheldActor->SetActorRelativeLocation(HandheldOffset);
 	HandheldActor->SetActorRelativeRotation(HandheldRotation);
-
 	HandheldActor->SetActorEnableCollision(false);
 
 	FVector Loc = HandheldOffset;
@@ -532,7 +550,7 @@ void ADARKCharacter::ToggleDevice()
 void ADARKCharacter::OxygenCountdown()
 {
 	Oxygen = FMath::Clamp(Oxygen - 1, 0, 100);
-	
+
 	if (Oxygen == 0) {
 		TakeDamagePlayer(MaxHealth);
 	}
@@ -577,7 +595,7 @@ void ADARKCharacter::Respawn()
 {
 	Health = MaxHealth;
 	Oxygen = 100;
-	bIsPaused = false; 
+	bIsPaused = false;
 
 	UGameplayStatics::SetGamePaused(GetWorld(), false);
 

@@ -23,6 +23,9 @@ struct FRoomData
     ERoomType RoomType;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FString RoomName;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TSubclassOf<AActor> RoomClass;
 };
 
@@ -34,8 +37,14 @@ class DARK_API AGridManager : public AActor
 public:
     AGridManager();
 
-    UFUNCTION()
+    UFUNCTION(BlueprintCallable, Category = "Grid")
     void ResetGrid();
+
+    UFUNCTION(BlueprintCallable, Category = "Grid")
+    void ShowRoomSelectWidget();
+
+    UFUNCTION()
+    void OnRoomChosen(int32 ChosenIndex);
 
 protected:
     virtual void BeginPlay() override;
@@ -54,9 +63,10 @@ private:
     float GridSpacingY = 3300.f;
 
     TMap<FIntPoint, AActor*> SpawnedRooms;
+    TArray<FRoomData> PendingRoomChoices;
 
-    void SpawnRooms();
+    void SpawnAnchorRoom();
+    void SpawnChosenRoom(const FRoomData& RoomData);
     FVector GridToWorld(const FIntPoint& GridPos) const;
-
     void ClearGrid();
 };
