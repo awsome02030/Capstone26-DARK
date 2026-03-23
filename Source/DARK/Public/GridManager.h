@@ -3,6 +3,29 @@
 #include "GameFramework/Actor.h"
 #include "GridManager.generated.h"
 
+UENUM(BlueprintType)
+enum class ERoomType : uint8
+{
+    Laboratory,
+    Equation,
+    Briefing,
+    CommunicationHub,
+    CargoMaintenance,
+    FusionReactor
+};
+
+USTRUCT(BlueprintType)
+struct FRoomData
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    ERoomType RoomType;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TSubclassOf<AActor> RoomClass;
+};
+
 UCLASS()
 class DARK_API AGridManager : public AActor
 {
@@ -22,7 +45,7 @@ private:
     TSubclassOf<AActor> AnchorRoomBP;
 
     UPROPERTY(EditAnywhere, Category = "Rooms")
-    TArray<TSubclassOf<AActor>> RoomBlueprints;
+    TArray<FRoomData> RoomPool;
 
     UPROPERTY(EditAnywhere, Category = "Grid")
     float GridSpacingX = 3300.f;

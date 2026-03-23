@@ -28,9 +28,9 @@ void AGridManager::SpawnRooms()
         return;
     }
 
-    if (RoomBlueprints.Num() == 0)
+    if (RoomPool.Num() == 0)
     {
-        UE_LOG(LogTemp, Error, TEXT("RoomBlueprints array is empty"));
+        UE_LOG(LogTemp, Error, TEXT("RoomPool is empty"));
         return;
     }
 
@@ -56,8 +56,14 @@ void AGridManager::SpawnRooms()
         {
             FIntPoint GridPos(X, Y);
 
-            int32 RandomIndex = FMath::RandRange(0, RoomBlueprints.Num() - 1);
-            TSubclassOf<AActor> RoomBP = RoomBlueprints[RandomIndex];
+            int32 RandomIndex = FMath::RandRange(0, RoomPool.Num() - 1);
+            TSubclassOf<AActor> RoomBP = RoomPool[RandomIndex].RoomClass;
+
+            if (!RoomBP)
+            {
+                UE_LOG(LogTemp, Warning, TEXT("Invalid room at index %d"), RandomIndex);
+                continue;
+            }
 
             FVector WorldPos = GridToWorld(GridPos);
 
