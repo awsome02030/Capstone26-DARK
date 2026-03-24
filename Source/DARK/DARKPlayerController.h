@@ -41,6 +41,12 @@ protected:
 	/** Pointer to the mobile controls widget */
 	TObjectPtr<UUserWidget> MobileControlsWidget;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<UUserWidget> HUDWidgetClass;
+
+	UPROPERTY()
+	UUserWidget* HUDWidget;
+
 	/** Gameplay initialization */
 	virtual void BeginPlay() override;
 

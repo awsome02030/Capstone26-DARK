@@ -39,6 +39,16 @@ void ADARKPlayerController::BeginPlay()
 		}
 
 	}
+
+	if (IsLocalPlayerController() && HUDWidgetClass)
+	{
+		HUDWidget = CreateWidget<UUserWidget>(this, HUDWidgetClass);
+
+		if (HUDWidget)
+		{
+			HUDWidget->AddToViewport();
+		}
+	}
 }
 
 void ADARKPlayerController::SetupInputComponent()
