@@ -1,7 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "PuzzleDoor.h"
+#include "GridManager.h"
 #include "Kismet/GameplayStatics.h"
 
 void APuzzleDoor::OpenDoor_Implementation()
@@ -10,13 +8,17 @@ void APuzzleDoor::OpenDoor_Implementation()
 
     if (!GridManager)
     {
-        GridManager = Cast<AGridManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AGridManager::StaticClass()));
+        GridManager = Cast<AGridManager>(
+            UGameplayStatics::GetActorOfClass(GetWorld(), AGridManager::StaticClass()));
         if (!GridManager)
         {
             UE_LOG(LogTemp, Warning, TEXT("APuzzleDoor: GridManager not found!"));
             return;
         }
     }
-    UE_LOG(LogTemp, Warning, TEXT("APuzzleDoor: Calling ShowRoomSelectWidget"));
-    GridManager->ShowRoomSelectWidget();
+
+    UE_LOG(LogTemp, Warning, TEXT("APuzzleDoor: Registering self as exit door. Location=%s"),
+        *GetActorLocation().ToString());
+
+    GridManager->RegisterExitDoor(this);
 }

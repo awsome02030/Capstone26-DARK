@@ -85,6 +85,12 @@ protected:
 	TSubclassOf<UUserWidget> PauseMenuClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> HUDWidgetClass;
+
+	UPROPERTY()
+	UUserWidget* HUDWidget = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<URoomSelectWidget> RoomSelectWidgetClass;
 
 	UPROPERTY(EditDefaultsOnly)

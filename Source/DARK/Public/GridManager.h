@@ -33,7 +33,6 @@ UCLASS()
 class DARK_API AGridManager : public AActor
 {
     GENERATED_BODY()
-
 public:
     AGridManager();
 
@@ -45,6 +44,9 @@ public:
 
     UFUNCTION()
     void OnRoomChosen(int32 ChosenIndex);
+
+    UFUNCTION(BlueprintCallable, Category = "Grid")
+    void RegisterExitDoor(AActor* Door);
 
 protected:
     virtual void BeginPlay() override;
@@ -64,6 +66,8 @@ private:
 
     TMap<FIntPoint, AActor*> SpawnedRooms;
     TArray<FRoomData> PendingRoomChoices;
+
+    AActor* CurrentExitDoor = nullptr;
 
     void SpawnAnchorRoom();
     void SpawnChosenRoom(const FRoomData& RoomData);

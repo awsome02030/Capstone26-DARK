@@ -1,22 +1,32 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "PuzzleInteractable.h"
 #include "PuzzleDoor.h"
+#include "GridManager.h"
+#include "Kismet/GameplayStatics.h"
 
 void APuzzleInteractable::OnPuzzleComplete()
 {
-	for (AActor* Actor : TiedClass) 
-	{
-		
-		APuzzleDoor* Door = Cast<APuzzleDoor>(Actor);
+    UE_LOG(LogTemp, Warning, TEXT("OnPuzzleComplete CALLED. TiedClass count=%d"), TiedClass.Num());
 
-		if (Door)
-		{
+    AGridManager* GridManager = Cast<AGridManager>(
+        UGameplayStatics::GetActorOfClass(GetWorld(), AGridManager::StaticClass()));
 
-			Door->OpenDoor();
-		}
-	}
+    for (AActor* Actor : TiedClass)
+    {
+        APuzzleDoor* Door = Cast<APuzzleDoor>(Actor);
+        if (Door)
+        {
+            if (GridManager)
+            {
+                GridManager->RegisterExitDoor(Door);
+            }
+            Door->OpenDoor();
+        }
+    }
 
-	Destroy();
+    if (GridManager)
+    {
+        GridManager->ShowRoomSelectWidget();
+    }
+
+    Destroy();
 }

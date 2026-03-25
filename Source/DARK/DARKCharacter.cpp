@@ -124,6 +124,15 @@ void ADARKCharacter::BeginPlay()
 		InventoryWidget->AddToPlayerScreen();
 		InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
 
+		if (HUDWidgetClass)
+		{
+			HUDWidget = CreateWidget<UUserWidget>(PC, HUDWidgetClass);
+			HUDWidget->AddToPlayerScreen();
+			HUDWidget->SetVisibility(ESlateVisibility::Visible);
+		}
+
+		bUIReady = true;
+
 		bUIReady = true;
 	}
 
