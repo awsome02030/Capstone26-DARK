@@ -25,6 +25,8 @@
 #include "Components/TextBlock.h"
 #include "TimerManager.h"
 #include "GridManager.h"
+#include "Components/AudioComponent.h"
+#include "Sound/SoundBase.h"
 #include "RoomSelectWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "EngineUtils.h"
@@ -134,6 +136,18 @@ void ADARKCharacter::BeginPlay()
 		bUIReady = true;
 
 		bUIReady = true;
+
+		if (LowOxygenSound)
+		{
+			LowOxygenAudioComponent = NewObject<UAudioComponent>(this, UAudioComponent::StaticClass());
+			if (LowOxygenAudioComponent)
+			{
+				LowOxygenAudioComponent->bAutoActivate = false;
+				LowOxygenAudioComponent->SetSound(LowOxygenSound);
+				LowOxygenAudioComponent->SetupAttachment(RootComponent);
+				LowOxygenAudioComponent->RegisterComponent();
+			}
+		}
 	}
 
 	SpawnAndAttachHandheld();
@@ -341,6 +355,7 @@ void ADARKCharacter::Interact()
 
 		if (Oxygen + Tank->Oxygen > 100) {
 			Oxygen = 100;
+			UpdateLowOxygenAudio();
 		}
 		else {
 			Oxygen += Tank->Oxygen;
@@ -560,6 +575,8 @@ void ADARKCharacter::OxygenCountdown()
 {
 	Oxygen = FMath::Clamp(Oxygen - 1, 0, 100);
 
+	UpdateLowOxygenAudio();
+
 	if (Oxygen == 0) {
 		TakeDamagePlayer(MaxHealth);
 	}
@@ -590,6 +607,11 @@ void ADARKCharacter::Die()
 
 	SetActorHiddenInGame(true);
 
+	if (LowOxygenAudioComponent && LowOxygenAudioComponent->IsPlaying())
+	{
+		LowOxygenAudioComponent->Stop();
+	}
+
 	FTimerHandle RespawnTimer;
 	GetWorld()->GetTimerManager().SetTimer(
 		RespawnTimer,
@@ -604,6 +626,7 @@ void ADARKCharacter::Respawn()
 {
 	Health = MaxHealth;
 	Oxygen = 100;
+	UpdateLowOxygenAudio();
 	bIsPaused = false;
 
 	UGameplayStatics::SetGamePaused(GetWorld(), false);
@@ -640,6 +663,31 @@ void ADARKCharacter::GravChange()
 			move->BrakingDecelerationWalking = 0.0;
 
 			grav = 0;
+		}
+	}
+}
+
+void ADARKCharacter::UpdateLowOxygenAudio()
+{
+	if (!LowOxygenAudioComponent || !LowOxygenSound)
+	{
+		return;
+	}
+
+	bool bShouldPlay = (Oxygen <= LowOxygenThreshold && Oxygen > 0);
+
+	if (bShouldPlay)
+	{
+		if (!LowOxygenAudioComponent->IsPlaying())
+		{
+			LowOxygenAudioComponent->Play();
+		}
+	}
+	else
+	{
+		if (LowOxygenAudioComponent->IsPlaying())
+		{
+			LowOxygenAudioComponent->Stop();
 		}
 	}
 }

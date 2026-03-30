@@ -21,6 +21,8 @@ class UInputAction;
 class UInputMappingContext;
 class UInventoryWidget;
 struct FInputActionValue;
+class USoundBase;
+class UAudioComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -136,6 +138,16 @@ protected:
 	void SpawnAndAttachHandheld();
 	void ToggleDevice();
 
+	//added audio for low oxygen sound like alarm
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundBase* LowOxygenSound;
+
+	UPROPERTY()
+	UAudioComponent* LowOxygenAudioComponent = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	float LowOxygenThreshold = 20.f;
+
 public:
 	ADARKCharacter();
 
@@ -169,6 +181,8 @@ public:
 
 	FVector SpawnLocation;
 	AGridManager* GridManagerRef = nullptr;
+
+	void UpdateLowOxygenAudio();
 
 protected:
 	void BeginPlay();
