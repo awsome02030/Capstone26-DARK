@@ -80,14 +80,20 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UUserWidget> InteractWidgetClass;
 
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<UUserWidget> InventoryWidgetClass;
-
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UUserWidget> PauseMenuClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UUserWidget> HUDWidgetClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<UInventoryWidget> InventoryWidgetClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<UUserWidget> DeviceWidgetClass;
+
+	UPROPERTY()
+	UUserWidget* DeviceWidget = nullptr;
 
 	UPROPERTY()
 	UUserWidget* HUDWidget = nullptr;
@@ -134,6 +140,10 @@ protected:
 	bool bDeviceAnimating = false;
 	bool bDeviceOpening = false;
 	bool bIsPaused = false;
+
+	FTimerHandle DeviceWidgetDelayHandle;
+
+	void ShowDeviceWidgetDelayed();
 
 	void SpawnAndAttachHandheld();
 	void ToggleDevice();

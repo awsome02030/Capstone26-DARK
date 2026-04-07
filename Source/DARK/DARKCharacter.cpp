@@ -48,7 +48,7 @@ ADARKCharacter::ADARKCharacter()
 	FirstPersonMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
 	FirstPersonMesh->SetCollisionProfileName(FName("NoCollision"));
 
-	// Create the Camera Component	
+	// Create the Camera Component
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("First Person Camera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
 	FirstPersonCameraComponent->SetRelativeRotation(FRotator(0.0f, 90.0f, -90.0f));
@@ -132,6 +132,17 @@ void ADARKCharacter::BeginPlay()
 			HUDWidget->AddToPlayerScreen();
 			HUDWidget->SetVisibility(ESlateVisibility::Visible);
 		}
+
+
+
+		// Added
+		if (DeviceWidgetClass)
+		{
+			DeviceWidget = CreateWidget<UUserWidget>(PC, DeviceWidgetClass);
+		}
+		// End
+
+
 
 		bUIReady = true;
 
@@ -296,6 +307,22 @@ void ADARKCharacter::Tick(float DeltaTime)
 
 void ADARKCharacter::InteractCheck()
 {
+
+
+	// Modded
+	if (DeviceWidget && DeviceWidget->IsVisible())
+	{
+		if (IsValid(InteractWidget))
+		{
+			InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
+		}
+		InteractHitResult = FHitResult();
+		return;
+	}
+	// End mod
+
+
+
 	if (!IsValid(InteractWidget)) return;
 
 	FHitResult Hit;
@@ -325,6 +352,17 @@ void ADARKCharacter::InteractCheck()
 
 void ADARKCharacter::Interact()
 {
+
+
+	// Modded
+	if (DeviceWidget && DeviceWidget->IsVisible())
+	{
+		return;
+	}
+	// End Mod
+
+
+
 	if (AItem* Item = Cast<AItem>(InteractHitResult.GetActor()))
 	{
 		if (Inventory.Num() <= 5) {
@@ -355,11 +393,12 @@ void ADARKCharacter::Interact()
 
 		if (Oxygen + Tank->Oxygen > 100) {
 			Oxygen = 100;
-			UpdateLowOxygenAudio();
 		}
 		else {
 			Oxygen += Tank->Oxygen;
 		}
+
+		UpdateLowOxygenAudio();
 	}
 }
 
@@ -394,6 +433,16 @@ void ADARKCharacter::ToggleInventory()
 {
 	ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
 	if (!PC) return;
+
+
+	// Modded - prevent inventory from opening when device is triggered
+	if (DeviceWidget && DeviceWidget->IsVisible())
+	{
+		return;
+	}
+	// End mod
+
+
 
 	if (!InventoryWidget->IsVisible())
 	{
@@ -437,6 +486,25 @@ void ADARKCharacter::TogglePauseMenu()
 {
 	ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
 	if (!PC) return;
+
+
+	// Modded - close device when paused
+	if (DeviceWidget && DeviceWidget->IsVisible())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
+
+		if (DeviceWidget && DeviceWidget->IsInViewport())
+		{
+			DeviceWidget->RemoveFromParent();
+		}
+		if (HandheldActor)
+		{
+			HandheldActor->SetActorHiddenInGame(true);
+		}
+	}
+	// End Mod
+
+
 
 	if (!PauseMenuWidget)
 	{
@@ -549,11 +617,80 @@ void ADARKCharacter::ToggleDevice()
 		return;
 	}
 
+
+	// Modded - cannot open widget when other widgets are open?
+	if (InventoryWidget && InventoryWidget->IsVisible())
+	{
+		return;
+	}
+
+	if (PauseMenuWidget && PauseMenuWidget->IsVisible())
+	{
+		return;
+	}
+	// End Mod
+
+
+
 	if (bDeviceAnimating) return;
 
 	bDeviceOpening = HandheldActor->IsHidden();
 	bDeviceAnimating = true;
 	DeviceAnimTime = 0.f;
+
+	ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
+	if (PC)
+	{
+
+
+		// Modded
+		if (bDeviceOpening)
+		{
+			GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
+
+			GetWorld()->GetTimerManager().SetTimer(
+				DeviceWidgetDelayHandle,
+				this,
+				&ADARKCharacter::ShowDeviceWidgetDelayed,
+				DeviceAnimDuration,
+				false
+			);
+
+			FInputModeGameAndUI InputMode;
+			InputMode.SetHideCursorDuringCapture(false);
+			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+
+			if (DeviceWidget)
+			{
+				InputMode.SetWidgetToFocus(DeviceWidget->TakeWidget());
+			}
+
+			PC->SetInputMode(InputMode);
+			PC->bShowMouseCursor = true;
+
+			GetController()->SetIgnoreLookInput(true);
+			GetController()->SetIgnoreMoveInput(true);
+			GetCharacterMovement()->StopMovementImmediately();
+		}
+		else
+		{
+			GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
+
+			if (DeviceWidget && DeviceWidget->IsInViewport())
+			{
+				DeviceWidget->RemoveFromParent();
+			}
+
+			PC->bShowMouseCursor = false;
+			PC->SetInputMode(FInputModeGameOnly());
+
+			GetController()->SetIgnoreLookInput(false);
+			GetController()->SetIgnoreMoveInput(false);
+		}
+		// End Mod
+
+
+	}
 
 	if (bDeviceOpening)
 	{
@@ -612,6 +749,23 @@ void ADARKCharacter::Die()
 		LowOxygenAudioComponent->Stop();
 	}
 
+
+
+	// Modded - CLose widget when die
+	GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
+
+	if (DeviceWidget && DeviceWidget->IsInViewport())
+	{
+		DeviceWidget->RemoveFromParent();
+	}
+	if (HandheldActor)
+	{
+		HandheldActor->SetActorHiddenInGame(true);
+	}
+	// End Mod
+
+
+
 	FTimerHandle RespawnTimer;
 	GetWorld()->GetTimerManager().SetTimer(
 		RespawnTimer,
@@ -639,6 +793,30 @@ void ADARKCharacter::Respawn()
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 	GetController()->SetIgnoreMoveInput(false);
 	GetController()->SetIgnoreLookInput(false);
+
+
+
+	// Modded - reset when respawn
+	GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
+
+	if (DeviceWidget && DeviceWidget->IsInViewport())
+	{
+		DeviceWidget->RemoveFromParent();
+	}
+	if (HandheldActor)
+	{
+		HandheldActor->SetActorHiddenInGame(true);
+	}
+
+	if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+	{
+		PC->bShowMouseCursor = false;
+		PC->SetInputMode(FInputModeGameOnly());
+	}
+	// ENd Mod
+
+
+
 }
 
 void ADARKCharacter::GravChange()
@@ -690,4 +868,16 @@ void ADARKCharacter::UpdateLowOxygenAudio()
 			LowOxygenAudioComponent->Stop();
 		}
 	}
+}
+
+void ADARKCharacter::ShowDeviceWidgetDelayed()
+{
+	if (!DeviceWidget) return;
+
+	if (!DeviceWidget->IsInViewport())
+	{
+		DeviceWidget->AddToPlayerScreen(50);
+	}
+
+	DeviceWidget->SetVisibility(ESlateVisibility::Visible);
 }
