@@ -17,7 +17,7 @@ void APuzzleInteractable::OnPuzzleComplete()
         {
             if (GridManager)
             {
-                GridManager->RegisterExitDoor(Door);
+                GridManager->RegisterExitDoor(Door, Door->DoorDirection);
             }
             Door->OpenDoor();
         }

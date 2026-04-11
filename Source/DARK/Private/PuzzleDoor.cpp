@@ -5,7 +5,6 @@
 void APuzzleDoor::OpenDoor_Implementation()
 {
     UE_LOG(LogTemp, Warning, TEXT("OpenDoor_Implementation CALLED"));
-
     if (!GridManager)
     {
         GridManager = Cast<AGridManager>(
@@ -16,9 +15,7 @@ void APuzzleDoor::OpenDoor_Implementation()
             return;
         }
     }
-
     UE_LOG(LogTemp, Warning, TEXT("APuzzleDoor: Registering self as exit door. Location=%s"),
         *GetActorLocation().ToString());
-
-    GridManager->RegisterExitDoor(this);
+    GridManager->RegisterExitDoor(this, DoorDirection);
 }
