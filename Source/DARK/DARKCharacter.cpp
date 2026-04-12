@@ -870,6 +870,18 @@ void ADARKCharacter::UpdateLowOxygenAudio()
 	}
 }
 
+void ADARKCharacter::ReduceOxygen(int Amount)
+{
+	Oxygen = FMath::Clamp(Oxygen - Amount, 0, 100);
+
+	UpdateLowOxygenAudio();
+
+	if (Oxygen == 0)
+	{
+		TakeDamagePlayer(MaxHealth);
+	}
+}
+
 void ADARKCharacter::ShowDeviceWidgetDelayed()
 {
 	if (!DeviceWidget) return;

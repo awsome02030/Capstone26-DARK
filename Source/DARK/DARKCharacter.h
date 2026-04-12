@@ -194,6 +194,9 @@ public:
 
 	void UpdateLowOxygenAudio();
 
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	void ReduceOxygen(int Amount);
+
 protected:
 	void BeginPlay();
 
