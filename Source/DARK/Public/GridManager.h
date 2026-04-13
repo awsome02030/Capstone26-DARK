@@ -1,30 +1,55 @@
 #pragma once
+
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GridManager.generated.h"
 
-UENUM(BlueprintType)
-enum class ERoomType : uint8 { Laboratory, Equation, Briefing, CommunicationHub, CargoMaintenance, FusionReactor };
+class ARoomBase;
 
 UENUM(BlueprintType)
-enum class EDoorDirection : uint8 { North, South, East, West };
+enum class ERoomType : uint8
+{
+    None UMETA(DisplayName = "None"),
+
+    Laboratory,
+    Equation,
+    Briefing,
+    CommunicationHub,
+    CargoMaintenance,
+    FusionReactor
+};
+
+UENUM(BlueprintType)
+enum class EDoorDirection : uint8
+{
+    North,
+    South,
+    East,
+    West
+};
 
 USTRUCT(BlueprintType)
 struct FRoomData
 {
     GENERATED_BODY()
-    UPROPERTY(EditAnywhere, BlueprintReadOnly) ERoomType RoomType;
-    UPROPERTY(EditAnywhere, BlueprintReadOnly) FString RoomName;
-    UPROPERTY(EditAnywhere, BlueprintReadOnly) TSubclassOf<AActor> RoomClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    ERoomType RoomType = ERoomType::None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FString RoomName;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TSubclassOf<ARoomBase> RoomClass;
 };
 
 UCLASS()
 class DARK_API AGridManager : public AActor
 {
     GENERATED_BODY()
+
 public:
     AGridManager();
-
     virtual void BeginPlay() override;
 
     UFUNCTION(BlueprintCallable, Category = "Grid")
@@ -44,7 +69,7 @@ public:
 
 private:
     UPROPERTY(EditAnywhere, Category = "Rooms")
-    TSubclassOf<AActor> AnchorRoomBP;
+    TSubclassOf<ARoomBase> AnchorRoomBP;
 
     UPROPERTY(EditAnywhere, Category = "Rooms")
     TArray<FRoomData> RoomPool;
@@ -61,7 +86,7 @@ private:
     UPROPERTY(EditAnywhere, Category = "Grid")
     float HallwayLengthOffset = 0.0f;
 
-    TMap<FIntPoint, AActor*> SpawnedRooms;
+    TMap<FIntPoint, ARoomBase*> SpawnedRooms;
     TMap<FIntPoint, AActor*> SpawnedHallways;
     TArray<FRoomData> PendingRoomChoices;
 
@@ -70,9 +95,8 @@ private:
     FIntPoint CurrentExitRoomCell = FIntPoint(0, 0);
 
     FIntPoint GetNextCell(const FIntPoint& From, EDoorDirection Dir) const;
-    FVector   GridToWorld(const FIntPoint& GridPos) const;
-    FRotator  HallwayRotationForDirection(EDoorDirection Dir) const;
-
+    FVector GridToWorld(const FIntPoint& GridPos) const;
+    FRotator HallwayRotationForDirection(EDoorDirection Dir) const;
     void SpawnChosenRoom(const FRoomData& RoomData);
     void SpawnHallway(const FIntPoint& FromCell, const FIntPoint& ToCell, EDoorDirection Dir);
     void ClearGrid();

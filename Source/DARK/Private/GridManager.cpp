@@ -1,4 +1,5 @@
 #include "GridManager.h"
+#include "RoomBase.h"
 #include "RoomSelectWidget.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
@@ -51,12 +52,22 @@ void AGridManager::SpawnAnchorRoom()
         UE_LOG(LogTemp, Error, TEXT("AnchorRoomBP is not set"));
         return;
     }
-    AActor* AnchorRoom = GetWorld()->SpawnActor<AActor>(
-        AnchorRoomBP, FVector::ZeroVector, FRotator::ZeroRotator);
+
+    ARoomBase* AnchorRoom = GetWorld()->SpawnActor<ARoomBase>(
+        AnchorRoomBP,
+        FVector::ZeroVector,
+        FRotator::ZeroRotator
+    );
+
     if (AnchorRoom)
+    {
+        AnchorRoom->SetGridManager(this);
         SpawnedRooms.Add(FIntPoint(0, 0), AnchorRoom);
+    }
     else
+    {
         UE_LOG(LogTemp, Error, TEXT("Failed to spawn AnchorRoom"));
+    }
 }
 
 void AGridManager::RegisterExitDoor(AActor* Door, EDoorDirection Direction)
@@ -65,19 +76,19 @@ void AGridManager::RegisterExitDoor(AActor* Door, EDoorDirection Direction)
     CurrentExitDirection = Direction;
 
     float BestDist = MAX_FLT;
+
     for (auto& Pair : SpawnedRooms)
     {
         if (!IsValid(Pair.Value)) continue;
+
         float Dist = FVector::Dist(Door->GetActorLocation(), Pair.Value->GetActorLocation());
+
         if (Dist < BestDist)
         {
             BestDist = Dist;
             CurrentExitRoomCell = Pair.Key;
         }
     }
-    UE_LOG(LogTemp, Warning, TEXT("RegisterExitDoor: %s | Dir: %d | Cell: %d,%d"),
-        *GetNameSafe(Door), (int32)Direction,
-        CurrentExitRoomCell.X, CurrentExitRoomCell.Y);
 }
 
 void AGridManager::ShowRoomSelectWidget()
@@ -92,16 +103,16 @@ void AGridManager::ShowRoomSelectWidget()
 
     if (SpawnedRooms.Contains(NextCell))
     {
-        UE_LOG(LogTemp, Warning, TEXT("Cell %d,%d already occupied — skipping widget"),
-            NextCell.X, NextCell.Y);
         return;
     }
 
     PendingRoomChoices.Empty();
     TArray<int32> UsedIndices;
+
     while (PendingRoomChoices.Num() < 3)
     {
         int32 Idx = FMath::RandRange(0, RoomPool.Num() - 1);
+
         if (!UsedIndices.Contains(Idx))
         {
             UsedIndices.Add(Idx);
@@ -111,106 +122,99 @@ void AGridManager::ShowRoomSelectWidget()
 
     ADARKCharacter* Character = Cast<ADARKCharacter>(
         UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
-    if (!Character)
+
+    if (Character)
     {
-        UE_LOG(LogTemp, Error, TEXT("No DARKCharacter found"));
-        return;
+        Character->ShowRoomSelectWidget(PendingRoomChoices);
     }
-    Character->ShowRoomSelectWidget(PendingRoomChoices);
 }
 
 void AGridManager::OnRoomChosen(int32 ChosenIndex)
 {
     if (!PendingRoomChoices.IsValidIndex(ChosenIndex))
     {
-        UE_LOG(LogTemp, Error, TEXT("Invalid ChosenIndex: %d"), ChosenIndex);
         return;
     }
+
     SpawnChosenRoom(PendingRoomChoices[ChosenIndex]);
 }
 
 void AGridManager::SpawnChosenRoom(const FRoomData& RoomData)
 {
-    if (!RoomData.RoomClass)
-    {
-        UE_LOG(LogTemp, Error, TEXT("Chosen room has no RoomClass"));
-        return;
-    }
+    if (!RoomData.RoomClass) return;
 
     FIntPoint NextCell = GetNextCell(CurrentExitRoomCell, CurrentExitDirection);
     FVector SpawnLocation = GridToWorld(NextCell);
 
-    FVector DirectionVector = FVector::ZeroVector;
+    FVector Offset = FVector::ZeroVector;
+
     switch (CurrentExitDirection)
     {
-    case EDoorDirection::North: DirectionVector = FVector(0, HallwayLengthOffset, 0); break;
-    case EDoorDirection::South: DirectionVector = FVector(0, -HallwayLengthOffset, 0); break;
-    case EDoorDirection::East:  DirectionVector = FVector(HallwayLengthOffset, 0, 0); break;
-    case EDoorDirection::West:  DirectionVector = FVector(-HallwayLengthOffset, 0, 0); break;
+    case EDoorDirection::North: Offset = FVector(0, HallwayLengthOffset, 0); break;
+    case EDoorDirection::South: Offset = FVector(0, -HallwayLengthOffset, 0); break;
+    case EDoorDirection::East:  Offset = FVector(HallwayLengthOffset, 0, 0); break;
+    case EDoorDirection::West:  Offset = FVector(-HallwayLengthOffset, 0, 0); break;
     }
-    SpawnLocation += DirectionVector;
+
+    SpawnLocation += Offset;
 
     FRotator SpawnRotation = HallwayRotationForDirection(CurrentExitDirection);
 
-    AActor* Room = GetWorld()->SpawnActor<AActor>(RoomData.RoomClass, SpawnLocation, SpawnRotation);
+    ARoomBase* Room = GetWorld()->SpawnActor<ARoomBase>(
+        RoomData.RoomClass,
+        SpawnLocation,
+        SpawnRotation
+    );
+
     if (Room)
     {
+        Room->SetGridManager(this);
         SpawnedRooms.Add(NextCell, Room);
-        UE_LOG(LogTemp, Log, TEXT("Spawned '%s' at cell %d,%d (%s)"),
-            *RoomData.RoomName, NextCell.X, NextCell.Y, *SpawnLocation.ToString());
         SpawnHallway(CurrentExitRoomCell, NextCell, CurrentExitDirection);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to spawn chosen room"));
     }
 }
 
 void AGridManager::SpawnHallway(const FIntPoint& FromCell, const FIntPoint& ToCell, EDoorDirection Dir)
 {
-    if (HallwayPool.Num() == 0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("No hallways in HallwayPool — skipping"));
-        return;
-    }
+    if (HallwayPool.Num() == 0) return;
 
     TSubclassOf<AActor> HallwayClass = HallwayPool[0];
     if (!HallwayClass) return;
 
     FVector FromWorld = GridToWorld(FromCell);
     FVector ToWorld = GridToWorld(ToCell);
-    FVector MidPoint = (FromWorld + ToWorld) * 0.5f;
-    FRotator HallwayRot = HallwayRotationForDirection(Dir);
 
-    AActor* Hallway = GetWorld()->SpawnActor<AActor>(HallwayClass, MidPoint, HallwayRot);
+    FVector Mid = (FromWorld + ToWorld) * 0.5f;
+    FRotator Rot = HallwayRotationForDirection(Dir);
+
+    AActor* Hallway = GetWorld()->SpawnActor<AActor>(HallwayClass, Mid, Rot);
+
     if (Hallway)
     {
         SpawnedHallways.Add(FromCell, Hallway);
-        UE_LOG(LogTemp, Log, TEXT("Spawned hallway between %d,%d and %d,%d"),
-            FromCell.X, FromCell.Y, ToCell.X, ToCell.Y);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to spawn hallway"));
     }
 }
 
 void AGridManager::ClearGrid()
 {
     for (auto& Pair : SpawnedRooms)
-        if (IsValid(Pair.Value)) Pair.Value->Destroy();
+        if (IsValid(Pair.Value))
+            Pair.Value->Destroy();
+
     SpawnedRooms.Empty();
 
     for (auto& Pair : SpawnedHallways)
-        if (IsValid(Pair.Value)) Pair.Value->Destroy();
+        if (IsValid(Pair.Value))
+            Pair.Value->Destroy();
+
     SpawnedHallways.Empty();
 }
 
 void AGridManager::ResetGrid()
 {
-    UE_LOG(LogTemp, Warning, TEXT("Resetting Grid"));
     ClearGrid();
     SpawnAnchorRoom();
+
     CurrentExitDoor = nullptr;
     CurrentExitRoomCell = FIntPoint(0, 0);
 }
