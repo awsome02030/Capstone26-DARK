@@ -384,7 +384,10 @@ void ADARKCharacter::Interact()
 			}
 		}
 
-		if (Check->requredItems.Num() == 0) {
+		if (Check->interactableType == 2) {
+			Check->DecreaseNeeded();
+		}
+		else if (Check->requredItems.Num() == 0 && Check->completeNeeded == 0 && Check->interactableType == 1) {
 			Check->OnPuzzleComplete();
 		}
 	}

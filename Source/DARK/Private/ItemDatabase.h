@@ -13,10 +13,10 @@ struct FItemData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditInstanceOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName ItemName;
 
-	UPROPERTY(EditInstanceOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AItem> Class;
 
 	FORCEINLINE bool operator==(const FItemData& Other) const

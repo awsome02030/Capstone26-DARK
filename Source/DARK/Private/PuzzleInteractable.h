@@ -18,13 +18,37 @@ class APuzzleInteractable : public AStaticMeshActor
 {
 	GENERATED_BODY()
 
+private:
+	void BeginPlay();
+
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Puzzle")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
+	TArray<FName> actorIDList;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
+	FName actorID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
+	FName roomID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
 	TArray<FItemData> requredItems;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Puzzle")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
 	TArray<AActor*> TiedClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
+	int completeNeeded;
+
+	/*
+	1 = Keypad / thing that opens a door
+	2 = Socket / thing that unlocks another interactable
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
+	int interactableType;
 
 	UFUNCTION(BlueprintCallable)
 	void OnPuzzleComplete();
+	UFUNCTION(BlueprintCallable)
+	void DecreaseNeeded();
 };

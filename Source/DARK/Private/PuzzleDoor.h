@@ -13,6 +13,12 @@ class APuzzleDoor : public AStaticMeshActor
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
+	FName actorID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
+	FName roomID;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door")
 	EDoorDirection DoorDirection = EDoorDirection::North;
 
