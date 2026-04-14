@@ -245,9 +245,9 @@ void ADARKCharacter::DoAim(float Yaw, float Pitch)
 {
 	if (GetController())
 	{
-		float Sensitivity = 4.f;
+		float Sensitivity = 1.0f;
 		AddControllerYawInput(Yaw * Sensitivity);
-		AddControllerPitchInput(Pitch);
+		AddControllerPitchInput(Pitch * Sensitivity);
 	}
 }
 
@@ -505,8 +505,10 @@ void ADARKCharacter::TogglePauseMenu()
 			HandheldActor->SetActorHiddenInGame(true);
 		}
 	}
-	// End Mod
 
+	bDeviceAnimating = false;
+	bDeviceOpening = false;
+	// End Mod
 
 
 	if (!PauseMenuWidget)
@@ -713,7 +715,9 @@ void ADARKCharacter::ToggleDevice()
 
 void ADARKCharacter::OxygenCountdown()
 {
-	Oxygen = FMath::Clamp(Oxygen - 1, 0, 100);
+	int DrainAmount = FMath::RoundToInt(1.0f * OxygenDrainMultiplier);
+
+	Oxygen = FMath::Clamp(Oxygen - DrainAmount, 0, 100);
 
 	UpdateLowOxygenAudio();
 
@@ -767,7 +771,14 @@ void ADARKCharacter::Die()
 	}
 	// End Mod
 
+	bDeviceAnimating = false;
+	bDeviceOpening = false;
 
+	if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+	{
+		PC->bShowMouseCursor = false;
+		PC->SetInputMode(FInputModeGameOnly());
+	}
 
 	FTimerHandle RespawnTimer;
 	GetWorld()->GetTimerManager().SetTimer(
@@ -816,6 +827,9 @@ void ADARKCharacter::Respawn()
 		PC->bShowMouseCursor = false;
 		PC->SetInputMode(FInputModeGameOnly());
 	}
+
+	bDeviceAnimating = false;
+	bDeviceOpening = false;
 	// ENd Mod
 
 

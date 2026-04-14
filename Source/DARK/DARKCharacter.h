@@ -158,6 +158,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Audio")
 	float LowOxygenThreshold = 20.f;
 
+
+
 public:
 	ADARKCharacter();
 
@@ -179,7 +181,10 @@ public:
 	float Health;
 
 	void TakeDamagePlayer(float DamageAmount);
+
+	UFUNCTION(BlueprintCallable)
 	void Die();
+
 	void Respawn();
 	void TogglePauseMenu();
 	void GravChange();
@@ -196,6 +201,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	void ReduceOxygen(int Amount);
+
+	UPROPERTY(BlueprintReadWrite, Category = "UI")
+	bool bIsInDeathZone = false;
+
+	UPROPERTY(BlueprintReadWrite)
+	float OxygenDrainMultiplier = 1.0f;
 
 protected:
 	void BeginPlay();
