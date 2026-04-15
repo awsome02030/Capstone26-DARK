@@ -6,9 +6,6 @@ void APuzzleDoor::OpenDoor_Implementation()
 {
     UE_LOG(LogTemp, Warning, TEXT("OpenDoor_Implementation CALLED"));
 
-    UE_LOG(LogTemp, Warning, TEXT("GridManager ref: %s"),
-        GridManager ? *GridManager->GetName() : TEXT("NULL"));
-
     if (!GridManager)
     {
         GridManager = Cast<AGridManager>(
@@ -17,9 +14,13 @@ void APuzzleDoor::OpenDoor_Implementation()
 
     if (!GridManager)
     {
-        UE_LOG(LogTemp, Warning, TEXT("APuzzleDoor: GridManager not found!"));
+        UE_LOG(LogTemp, Error, TEXT("APuzzleDoor: GridManager not found!"));
         return;
     }
 
+    UE_LOG(LogTemp, Warning, TEXT("APuzzleDoor: GridManager found: %s"), *GridManager->GetName());
+    UE_LOG(LogTemp, Warning, TEXT("APuzzleDoor: Registering door direction: %d"), (int32)DoorDirection);
+
     GridManager->RegisterExitDoor(this, DoorDirection);
+    UE_LOG(LogTemp, Warning, TEXT("APuzzleDoor: RegisterExitDoor complete"));
 }

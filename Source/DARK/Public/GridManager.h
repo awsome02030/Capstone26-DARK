@@ -86,6 +86,9 @@ private:
     UPROPERTY(EditAnywhere, Category = "Grid")
     float HallwayLengthOffset = 0.0f;
 
+    UPROPERTY(EditAnywhere, Category = "Grid")
+    float RoomZOffset = 0.0f;
+
     TMap<FIntPoint, ARoomBase*> SpawnedRooms;
     TMap<FIntPoint, AActor*> SpawnedHallways;
     TArray<FRoomData> PendingRoomChoices;
