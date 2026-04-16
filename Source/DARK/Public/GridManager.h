@@ -10,7 +10,6 @@ UENUM(BlueprintType)
 enum class ERoomType : uint8
 {
     None UMETA(DisplayName = "None"),
-
     Laboratory,
     Equation,
     Briefing,
@@ -68,11 +67,32 @@ public:
     void RegisterExitDoor(AActor* Door, EDoorDirection Direction);
 
 private:
-    UPROPERTY(EditAnywhere, Category = "Rooms")
-    TSubclassOf<ARoomBase> AnchorRoomBP;
 
     UPROPERTY(EditAnywhere, Category = "Rooms")
-    TArray<FRoomData> RoomPool;
+    TArray<FRoomData> GameStartPool;
+
+    UPROPERTY(EditAnywhere, Category = "Rooms")
+    TArray<FRoomData> Reset1Pool;
+
+    UPROPERTY(EditAnywhere, Category = "Rooms")
+    TArray<FRoomData> Reset2Pool;
+
+    UPROPERTY(EditAnywhere, Category = "Rooms")
+    TArray<FRoomData> Reset3Pool;
+
+    UPROPERTY(EditAnywhere, Category = "Special Rooms")
+    FRoomData HauntRoom;
+
+    UPROPERTY(EditAnywhere, Category = "Special Rooms")
+    FRoomData EscapePodRoom;
+
+    UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+    int32 ResetCount = 0;
+
+    const TArray<FRoomData>& GetCurrentRoomPool() const;
+
+    UPROPERTY(EditAnywhere, Category = "Rooms")
+    TSubclassOf<ARoomBase> AnchorRoomBP;
 
     UPROPERTY(EditAnywhere, Category = "Rooms")
     TArray<TSubclassOf<AActor>> HallwayPool;
