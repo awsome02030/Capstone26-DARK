@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -10,18 +8,14 @@
 
 class APuzzleInteractable;
 
-/**
- * 
- */
 UCLASS()
 class APuzzleInteractable : public AStaticMeshActor
 {
 	GENERATED_BODY()
 
-private:
-	void BeginPlay();
-
 public:
+	virtual void BeginPlay() override;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
 	TArray<FName> actorIDList;
 
@@ -47,8 +41,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
 	int interactableType;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Puzzle")
+	EDoorDirection SpawnDirection;
+
 	UFUNCTION(BlueprintCallable)
 	void OnPuzzleComplete();
+
 	UFUNCTION(BlueprintCallable)
 	void DecreaseNeeded();
 };
