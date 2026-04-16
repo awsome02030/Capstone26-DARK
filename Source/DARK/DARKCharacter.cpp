@@ -809,7 +809,6 @@ void ADARKCharacter::Respawn()
 	GetController()->SetIgnoreLookInput(false);
 
 
-
 	// Modded - reset when respawn
 	GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
 
@@ -822,14 +821,22 @@ void ADARKCharacter::Respawn()
 		HandheldActor->SetActorHiddenInGame(true);
 	}
 
+	SetActorLocation(SpawnLocation);
+	SetActorHiddenInGame(false);
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	GetController()->SetIgnoreMoveInput(false);
+	GetController()->SetIgnoreLookInput(false);
+
 	if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
 	{
 		PC->bShowMouseCursor = false;
 		PC->SetInputMode(FInputModeGameOnly());
+		PC->SetCinematicMode(false, false, false);
 	}
 
 	bDeviceAnimating = false;
 	bDeviceOpening = false;
+	OnPlayerRespawned();
 	// ENd Mod
 
 
