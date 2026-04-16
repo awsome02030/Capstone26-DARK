@@ -45,6 +45,18 @@ FRotator AGridManager::HallwayRotationForDirection(EDoorDirection Dir) const
     return FRotator::ZeroRotator;
 }
 
+const TArray<FRoomData>& AGridManager::GetCurrentRoomPool() const
+{
+    switch (ResetCount)
+    {
+    case 0: return GameStartPool;
+    case 1: return Reset1Pool;
+    case 2: return Reset2Pool;
+    case 3: return Reset3Pool;
+    default: return Reset3Pool;
+    }
+}
+
 void AGridManager::SpawnAnchorRoom()
 {
     if (!AnchorRoomBP)
@@ -102,33 +114,47 @@ void AGridManager::ShowRoomSelectWidget()
 {
     UE_LOG(LogTemp, Warning, TEXT("ShowRoomSelectWidget CALLED"));
 
-    if (RoomPool.Num() < 3)
+    const TArray<FRoomData>& ActivePool = GetCurrentRoomPool();
+
+    if (ActivePool.Num() < 3)
     {
-        UE_LOG(LogTemp, Error, TEXT("RoomPool must have at least 3 entries, currently has %d"), RoomPool.Num());
+        UE_LOG(LogTemp, Error, TEXT("Active room pool must have at least 3 entries, currently has %d"), ActivePool.Num());
         return;
     }
 
     FIntPoint NextCell = GetNextCell(CurrentExitRoomCell, CurrentExitDirection);
-    UE_LOG(LogTemp, Warning, TEXT("NextCell: X=%d Y=%d"), NextCell.X, NextCell.Y);
 
     if (SpawnedRooms.Contains(NextCell))
     {
-        UE_LOG(LogTemp, Warning, TEXT("ShowRoomSelectWidget: NextCell already occupied, aborting"));
+        UE_LOG(LogTemp, Warning, TEXT("NextCell already occupied, aborting"));
         return;
     }
 
     PendingRoomChoices.Empty();
     TArray<int32> UsedIndices;
 
+    // Base Rooms
     while (PendingRoomChoices.Num() < 3)
     {
-        int32 Idx = FMath::RandRange(0, RoomPool.Num() - 1);
+        int32 Idx = FMath::RandRange(0, ActivePool.Num() - 1);
 
         if (!UsedIndices.Contains(Idx))
         {
             UsedIndices.Add(Idx);
-            PendingRoomChoices.Add(RoomPool[Idx]);
+            PendingRoomChoices.Add(ActivePool[Idx]);
         }
+    }
+
+    // Haunt room becomes available
+    if (ResetCount >= 1)
+    {
+        PendingRoomChoices[FMath::RandRange(0, 2)] = HauntRoom;
+    }
+
+    // Escape room becomes available
+    if (ResetCount >= 2)
+    {
+        PendingRoomChoices[FMath::RandRange(0, 2)] = EscapePodRoom;
     }
 
     ADARKCharacter* Character = Cast<ADARKCharacter>(
@@ -254,6 +280,10 @@ void AGridManager::ClearGrid()
 
 void AGridManager::ResetGrid()
 {
+    ResetCount++;
+
+    ResetCount = FMath::Clamp(ResetCount, 0, 3);
+
     ClearGrid();
     SpawnAnchorRoom();
 
