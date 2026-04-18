@@ -44,6 +44,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Puzzle")
 	EDoorDirection SpawnDirection;
 
+	bool used = false;
+
 	UFUNCTION(BlueprintCallable)
 	void OnPuzzleComplete();
 

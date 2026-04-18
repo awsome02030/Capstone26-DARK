@@ -340,8 +340,25 @@ void ADARKCharacter::InteractCheck()
 
 	if (bHit && Hit.GetActor() && (Hit.GetActor()->IsA<AItem>() || Hit.GetActor()->IsA<APuzzleInteractable>() || Hit.GetActor()->IsA<AOxygenTank>()))
 	{
-		InteractWidget->SetVisibility(ESlateVisibility::Visible);
-		InteractHitResult = Hit;
+		if (Hit.GetActor()->IsA<APuzzleInteractable>()) 
+		{
+			APuzzleInteractable* interactable = Cast<APuzzleInteractable>(Hit.GetActor());
+
+			if (interactable->used == false)
+			{
+				InteractWidget->SetVisibility(ESlateVisibility::Visible);
+				InteractHitResult = Hit;
+			}
+			else 
+			{
+				InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
+				InteractHitResult = FHitResult();
+			}
+		}
+		else {
+			InteractWidget->SetVisibility(ESlateVisibility::Visible);
+			InteractHitResult = Hit;
+		}
 	}
 	else
 	{
@@ -369,9 +386,16 @@ void ADARKCharacter::Interact()
 			FItemData* Data = ItemDatabase->Items.FindByPredicate([&](const FItemData& ItemData) {
 				return ItemData.Class == InteractHitResult.GetActor()->GetClass();
 				});
+			
+			if (Data->ItemName == "Tape") {
+				HasAudioTape = true;
+				InteractHitResult.GetActor()->Destroy();
+			}
+			else {
+				Inventory.Emplace(*Data);
+				InteractHitResult.GetActor()->Destroy();
+			}
 
-			Inventory.Emplace(*Data);
-			InteractHitResult.GetActor()->Destroy();
 		}
 	}
 	else if (APuzzleInteractable* Check = Cast<APuzzleInteractable>(InteractHitResult.GetActor())) {
@@ -384,7 +408,7 @@ void ADARKCharacter::Interact()
 			}
 		}
 
-		if (Check->interactableType == 2) {
+		if (Check->requredItems.Num() == 0 && Check->interactableType == 2) {
 			Check->DecreaseNeeded();
 		}
 		else if (Check->requredItems.Num() == 0 && Check->completeNeeded == 0 && Check->interactableType == 1) {

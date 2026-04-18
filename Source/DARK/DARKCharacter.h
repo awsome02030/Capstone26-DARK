@@ -211,6 +211,9 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	float OxygenDrainMultiplier = 1.0f;
 
+	UPROPERTY(BlueprintReadWrite)
+	bool HasAudioTape = false;
+
 protected:
 	void BeginPlay();
 

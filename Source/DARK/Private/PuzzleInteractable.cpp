@@ -63,12 +63,12 @@ void APuzzleInteractable::OnPuzzleComplete()
 		}
 	}
 
+	used = true;
+
 	if (GridManager)
 	{
 		GridManager->ShowRoomSelectWidget();
 	}
-
-	Destroy();
 }
 
 void APuzzleInteractable::DecreaseNeeded()
@@ -80,8 +80,11 @@ void APuzzleInteractable::DecreaseNeeded()
 		if (interactable)
 		{
 			interactable->completeNeeded -= 1;
-		}
-	}
 
-	TiedClass.Empty();
+			used = true;
+			TiedClass.Remove(interactable);
+		}
+
+
+	}
 }
