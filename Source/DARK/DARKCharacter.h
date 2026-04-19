@@ -188,7 +188,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnPlayerRespawned();
 
+	UFUNCTION(BlueprintCallable)
 	void Respawn();
+
 	void TogglePauseMenu();
 	void GravChange();
 
