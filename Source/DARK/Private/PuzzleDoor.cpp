@@ -23,22 +23,5 @@ void APuzzleDoor::OpenDoor_Implementation()
         return;
     }
 
-    TArray<AActor*> Rooms;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARoomBase::StaticClass(), Rooms);
-    for (AActor* Actor : Rooms)
-    {
-        ARoomBase* Room = Cast<ARoomBase>(Actor);
-        if (Room && Room->RoomID == roomID)
-        {
-            if (Room->bDoorOpened)
-            {
-                UE_LOG(LogTemp, Warning, TEXT("APuzzleDoor: Room already has an open door, ignoring"));
-                return;
-            }
-            Room->bDoorOpened = true;
-            break;
-        }
-    }
-
     GridManager->RegisterExitDoor(this, DoorDirection);
 }
