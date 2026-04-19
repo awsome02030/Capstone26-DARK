@@ -15,10 +15,17 @@ public:
 protected:
     virtual void BeginPlay() override;
 public:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Room")
+    FName RoomID;
+
     UFUNCTION(BlueprintPure, Category = "Room")
     AGridManager* GetGridManager() const { return GridManager; }
+
     UFUNCTION(BlueprintCallable, Category = "Room")
     void SetGridManager(AGridManager* InGridManager);
+
+    UPROPERTY(BlueprintReadOnly, Category = "Room")
+    bool bDoorOpened = false;
 private:
     UPROPERTY()
     AGridManager* GridManager = nullptr;

@@ -66,6 +66,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Grid")
     void RegisterExitDoor(AActor* Door, EDoorDirection Direction);
 
+    UFUNCTION(BlueprintCallable, Category = "Grid")
+    bool IsCellFreeInDirection(AActor* Door, EDoorDirection Direction);
+
 private:
 
     UPROPERTY(EditAnywhere, Category = "Rooms")
@@ -120,6 +123,7 @@ private:
     FIntPoint GetNextCell(const FIntPoint& From, EDoorDirection Dir) const;
     FVector GridToWorld(const FIntPoint& GridPos) const;
     FRotator HallwayRotationForDirection(EDoorDirection Dir) const;
+    EDoorDirection RemapDoorDirection(EDoorDirection LocalDir, EDoorDirection SpawnDir) const;
     void SpawnChosenRoom(const FRoomData& RoomData);
     void SpawnHallway(const FIntPoint& FromCell, const FIntPoint& ToCell, EDoorDirection Dir);
     void ClearGrid();

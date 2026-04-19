@@ -1,6 +1,7 @@
 #include "GridManager.h"
 #include "RoomBase.h"
 #include "RoomSelectWidget.h"
+#include "PuzzleDoor.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "DARKCharacter.h"
@@ -43,6 +44,32 @@ FRotator AGridManager::HallwayRotationForDirection(EDoorDirection Dir) const
     case EDoorDirection::West:  return FRotator(0, 270, 0);
     }
     return FRotator::ZeroRotator;
+}
+
+EDoorDirection AGridManager::RemapDoorDirection(EDoorDirection LocalDir, EDoorDirection SpawnDir) const
+{
+
+    static const EDoorDirection Table[4][4] =
+    {
+         { EDoorDirection::North, EDoorDirection::South, EDoorDirection::East,  EDoorDirection::West  },
+         { EDoorDirection::South, EDoorDirection::North, EDoorDirection::West,  EDoorDirection::East  },
+         { EDoorDirection::East,  EDoorDirection::West,  EDoorDirection::South, EDoorDirection::North },
+         { EDoorDirection::West,  EDoorDirection::East,  EDoorDirection::North, EDoorDirection::South },
+    };
+
+    auto ToIndex = [](EDoorDirection D) -> int32
+        {
+            switch (D)
+            {
+            case EDoorDirection::North: return 0;
+            case EDoorDirection::South: return 1;
+            case EDoorDirection::East:  return 2;
+            case EDoorDirection::West:  return 3;
+            }
+            return 0;
+        };
+
+    return Table[ToIndex(SpawnDir)][ToIndex(LocalDir)];
 }
 
 const TArray<FRoomData>& AGridManager::GetCurrentRoomPool() const
@@ -93,11 +120,32 @@ void AGridManager::RegisterExitDoor(AActor* Door, EDoorDirection Direction)
     CurrentExitDoor = Door;
     CurrentExitDirection = Direction;
 
-    float BestDist = MAX_FLT;
+    APuzzleDoor* PuzzleDoor = Cast<APuzzleDoor>(Door);
 
+    if (PuzzleDoor && !PuzzleDoor->roomID.IsNone())
+    {
+        for (auto& Pair : SpawnedRooms)
+        {
+            if (!IsValid(Pair.Value)) continue;
+            if (Pair.Value->RoomID == PuzzleDoor->roomID)
+            {
+                CurrentExitRoomCell = Pair.Key;
+                UE_LOG(LogTemp, Warning, TEXT("RegisterExitDoor: matched by roomID=%s at cell X=%d Y=%d direction=%d"),
+                    *PuzzleDoor->roomID.ToString(), CurrentExitRoomCell.X, CurrentExitRoomCell.Y, (int32)Direction);
+                return;
+            }
+        }
+        UE_LOG(LogTemp, Warning, TEXT("RegisterExitDoor: no roomID match, falling back to distance"));
+    }
+
+    float BestDist = MAX_FLT;
     for (auto& Pair : SpawnedRooms)
     {
         if (!IsValid(Pair.Value)) continue;
+
+        FIntPoint PotentialNext = GetNextCell(Pair.Key, Direction);
+        if (SpawnedRooms.Contains(PotentialNext)) continue;
+
         float Dist = FVector::Dist(Door->GetActorLocation(), Pair.Value->GetActorLocation());
         if (Dist < BestDist)
         {
@@ -106,8 +154,25 @@ void AGridManager::RegisterExitDoor(AActor* Door, EDoorDirection Direction)
         }
     }
 
-    UE_LOG(LogTemp, Warning, TEXT("RegisterExitDoor: closest room cell X=%d Y=%d"),
-        CurrentExitRoomCell.X, CurrentExitRoomCell.Y);
+    UE_LOG(LogTemp, Warning, TEXT("RegisterExitDoor: fallback matched cell X=%d Y=%d direction=%d"),
+        CurrentExitRoomCell.X, CurrentExitRoomCell.Y, (int32)Direction);
+}
+
+bool AGridManager::IsCellFreeInDirection(AActor* Door, EDoorDirection Direction)
+{
+    APuzzleDoor* PuzzleDoor = Cast<APuzzleDoor>(Door);
+    if (!PuzzleDoor) return false;
+
+    for (auto& Pair : SpawnedRooms)
+    {
+        if (!IsValid(Pair.Value)) continue;
+        if (Pair.Value->RoomID == PuzzleDoor->roomID)
+        {
+            FIntPoint NextCell = GetNextCell(Pair.Key, Direction);
+            return !SpawnedRooms.Contains(NextCell);
+        }
+    }
+    return false;
 }
 
 void AGridManager::ShowRoomSelectWidget()
@@ -126,18 +191,17 @@ void AGridManager::ShowRoomSelectWidget()
 
     if (SpawnedRooms.Contains(NextCell))
     {
-        UE_LOG(LogTemp, Warning, TEXT("NextCell already occupied, aborting"));
+        UE_LOG(LogTemp, Warning, TEXT("NextCell already occupied at X=%d Y=%d, ExitCell X=%d Y=%d, Direction=%d"),
+            NextCell.X, NextCell.Y, CurrentExitRoomCell.X, CurrentExitRoomCell.Y, (int32)CurrentExitDirection);
         return;
     }
 
     PendingRoomChoices.Empty();
     TArray<int32> UsedIndices;
 
-    // Base Rooms
     while (PendingRoomChoices.Num() < 3)
     {
         int32 Idx = FMath::RandRange(0, ActivePool.Num() - 1);
-
         if (!UsedIndices.Contains(Idx))
         {
             UsedIndices.Add(Idx);
@@ -145,13 +209,11 @@ void AGridManager::ShowRoomSelectWidget()
         }
     }
 
-    // Haunt room becomes available
     if (ResetCount >= 1)
     {
         PendingRoomChoices[FMath::RandRange(0, 2)] = HauntRoom;
     }
 
-    // Escape room becomes available
     if (ResetCount >= 2)
     {
         PendingRoomChoices[FMath::RandRange(0, 2)] = EscapePodRoom;
@@ -225,14 +287,36 @@ void AGridManager::SpawnChosenRoom(const FRoomData& RoomData)
         UE_LOG(LogTemp, Warning, TEXT("SpawnChosenRoom: Room spawned successfully at %s"),
             *Room->GetActorLocation().ToString());
 
+        FName NewRoomID = FName(*FString::Printf(TEXT("Room_%d_%d"), NextCell.X, NextCell.Y));
+        Room->RoomID = NewRoomID;
+
         SpawnedRooms.Add(NextCell, Room);
         SpawnHallway(CurrentExitRoomCell, NextCell, CurrentExitDirection);
 
         AGridManager* Self = this;
         ARoomBase* RoomRef = Room;
-        GetWorldTimerManager().SetTimerForNextTick([Self, RoomRef]()
+        FName RoomIDCopy = NewRoomID;
+        EDoorDirection SpawnDirCopy = CurrentExitDirection;
+        GetWorldTimerManager().SetTimerForNextTick([Self, RoomRef, RoomIDCopy, SpawnDirCopy]()
             {
-                if (IsValid(RoomRef)) RoomRef->SetGridManager(Self);
+                if (IsValid(RoomRef))
+                {
+                    RoomRef->SetGridManager(Self);
+
+                    TArray<AActor*> Attached;
+                    RoomRef->GetAttachedActors(Attached, true);
+                    for (AActor* Actor : Attached)
+                    {
+                        APuzzleDoor* Door = Cast<APuzzleDoor>(Actor);
+                        if (Door)
+                        {
+                            Door->roomID = RoomIDCopy;
+                            Door->DoorDirection = Self->RemapDoorDirection(Door->DoorDirection, SpawnDirCopy);
+                            UE_LOG(LogTemp, Warning, TEXT("Stamped door %s roomID=%s worldDir=%d"),
+                                *Door->GetName(), *RoomIDCopy.ToString(), (int32)Door->DoorDirection);
+                        }
+                    }
+                }
             });
     }
     else
@@ -281,7 +365,6 @@ void AGridManager::ClearGrid()
 void AGridManager::ResetGrid()
 {
     ResetCount++;
-
     ResetCount = FMath::Clamp(ResetCount, 0, 3);
 
     ClearGrid();

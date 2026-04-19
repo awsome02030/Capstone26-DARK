@@ -49,26 +49,29 @@ void APuzzleInteractable::OnPuzzleComplete()
 	AGridManager* GridManager = Cast<AGridManager>(
 		UGameplayStatics::GetActorOfClass(GetWorld(), AGridManager::StaticClass()));
 
+	if (!GridManager)
+	{
+		UE_LOG(LogTemp, Error, TEXT("OnPuzzleComplete: GridManager NOT FOUND"));
+		return;
+	}
+
 	for (AActor* Actor : TiedClass)
 	{
+		if (!IsValid(Actor)) continue;
 		APuzzleDoor* Door = Cast<APuzzleDoor>(Actor);
 		if (Door)
 		{
-			if (GridManager)
-			{
-				GridManager->RegisterExitDoor(Door, SpawnDirection);
-			}
-
+			UE_LOG(LogTemp, Warning, TEXT("OnPuzzleComplete: Calling OpenDoor on %s"), *Door->GetName());
 			Door->OpenDoor();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("OnPuzzleComplete: Actor %s is not a PuzzleDoor"), *Actor->GetName());
 		}
 	}
 
 	used = true;
-
-	if (GridManager)
-	{
-		GridManager->ShowRoomSelectWidget();
-	}
+	GridManager->ShowRoomSelectWidget();
 }
 
 void APuzzleInteractable::DecreaseNeeded()
