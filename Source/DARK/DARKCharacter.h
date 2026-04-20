@@ -120,19 +120,25 @@ protected:
 	URoomSelectWidget* RoomSelectWidget = nullptr;
 
 	UPROPERTY(EditAnywhere, Category = "Device")
-	FVector HandheldOffset = FVector(30.f, 12.f, -15.f);
-
-	UPROPERTY(EditAnywhere, Category = "Device")
 	FRotator HandheldRotation = FRotator(0.f, 0.f, 0.f);
 
 	UPROPERTY(EditAnywhere, Category = "Device")
 	float DeviceAnimDuration = 0.3f;
 
 	UPROPERTY(EditAnywhere, Category = "Device")
-	float DeviceStartZ = -50.f;
+	FVector DeviceStartOffset = FVector(-55.f, -10.f, -40.f);
 
 	UPROPERTY(EditAnywhere, Category = "Device")
-	float DeviceTargetZ = 0.f;
+	FVector DeviceTargetOffset = FVector(30.f, 12.f, -15.f);
+
+	UPROPERTY(EditAnywhere, Category = "Device")
+	FRotator DeviceStartRotation = FRotator(20.f, -30.f, -18.f);
+
+	UPROPERTY(EditAnywhere, Category = "Device")
+	FRotator DeviceTargetRotation = FRotator(0.f, 0.f, 0.f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device")
+	bool bDeviceOpen = false;
 
 	FTimerHandle OxygenTimerHandle;
 

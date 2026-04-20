@@ -162,10 +162,6 @@ void ADARKCharacter::BeginPlay()
 	}
 
 	SpawnAndAttachHandheld();
-	if (HandheldActor)
-	{
-		HandheldActor->SetActorHiddenInGame(true);
-	}
 
 	GetWorld()->GetTimerManager().SetTimer(
 		OxygenTimerHandle,
@@ -285,22 +281,26 @@ void ADARKCharacter::Tick(float DeltaTime)
 
 		const float Alpha = FMath::Clamp(DeviceAnimTime / DeviceAnimDuration, 0.f, 1.f);
 
-		const float NewZ = bDeviceOpening
-			? FMath::Lerp(DeviceStartZ, DeviceTargetZ, Alpha)
-			: FMath::Lerp(DeviceTargetZ, DeviceStartZ, Alpha);
+		FVector NewLoc;
+		FQuat NewRot;
 
-		FVector Loc = HandheldOffset;
-		Loc.Z = NewZ;
-		HandheldActor->SetActorRelativeLocation(Loc);
+		if (bDeviceOpening)
+		{
+			NewLoc = FMath::Lerp(DeviceStartOffset, DeviceTargetOffset, Alpha);
+			NewRot = FQuat::Slerp(DeviceStartRotation.Quaternion(), DeviceTargetRotation.Quaternion(), Alpha);
+		}
+		else
+		{
+			NewLoc = FMath::Lerp(DeviceTargetOffset, DeviceStartOffset, Alpha);
+			NewRot = FQuat::Slerp(DeviceTargetRotation.Quaternion(), DeviceStartRotation.Quaternion(), Alpha);
+		}
+
+		HandheldActor->SetActorRelativeLocation(NewLoc);
+		HandheldActor->SetActorRelativeRotation(NewRot);
 
 		if (Alpha >= 1.f)
 		{
 			bDeviceAnimating = false;
-
-			if (!bDeviceOpening)
-			{
-				HandheldActor->SetActorHiddenInGame(true);
-			}
 		}
 	}
 }
@@ -524,10 +524,7 @@ void ADARKCharacter::TogglePauseMenu()
 		{
 			DeviceWidget->RemoveFromParent();
 		}
-		if (HandheldActor)
-		{
-			HandheldActor->SetActorHiddenInGame(true);
-		}
+		HandheldActor->SetActorHiddenInGame(false);
 	}
 
 	bDeviceAnimating = false;
@@ -619,13 +616,9 @@ void ADARKCharacter::SpawnAndAttachHandheld()
 		FAttachmentTransformRules::SnapToTargetNotIncludingScale
 	);
 
-	HandheldActor->SetActorRelativeLocation(HandheldOffset);
-	HandheldActor->SetActorRelativeRotation(HandheldRotation);
+	HandheldActor->SetActorRelativeLocation(DeviceStartOffset);
+	HandheldActor->SetActorRelativeRotation(DeviceStartRotation);
 	HandheldActor->SetActorEnableCollision(false);
-
-	FVector Loc = HandheldOffset;
-	Loc.Z = DeviceStartZ;
-	HandheldActor->SetActorRelativeLocation(Loc);
 
 	UE_LOG(LogTemp, Warning, TEXT("SpawnAndAttachHandheld. Class=%s Spawned=%s"),
 		*GetNameSafe(HandheldClass),
@@ -646,8 +639,6 @@ void ADARKCharacter::ToggleDevice()
 		return;
 	}
 
-
-	// Modded - cannot open widget when other widgets are open?
 	if (InventoryWidget && InventoryWidget->IsVisible())
 	{
 		return;
@@ -657,22 +648,17 @@ void ADARKCharacter::ToggleDevice()
 	{
 		return;
 	}
-	// End Mod
-
-
 
 	if (bDeviceAnimating) return;
 
-	bDeviceOpening = HandheldActor->IsHidden();
+	bDeviceOpening = !bDeviceOpen;
+	bDeviceOpen = bDeviceOpening;
 	bDeviceAnimating = true;
 	DeviceAnimTime = 0.f;
 
 	ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
 	if (PC)
 	{
-
-
-		// Modded
 		if (bDeviceOpening)
 		{
 			GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
@@ -716,24 +702,6 @@ void ADARKCharacter::ToggleDevice()
 			GetController()->SetIgnoreLookInput(false);
 			GetController()->SetIgnoreMoveInput(false);
 		}
-		// End Mod
-
-
-	}
-
-	if (bDeviceOpening)
-	{
-		HandheldActor->SetActorHiddenInGame(false);
-
-		FVector Loc = HandheldOffset;
-		Loc.Z = DeviceStartZ;
-		HandheldActor->SetActorRelativeLocation(Loc);
-	}
-	else
-	{
-		FVector Loc = HandheldOffset;
-		Loc.Z = DeviceTargetZ;
-		HandheldActor->SetActorRelativeLocation(Loc);
 	}
 }
 
@@ -789,11 +757,7 @@ void ADARKCharacter::Die()
 	{
 		DeviceWidget->RemoveFromParent();
 	}
-	if (HandheldActor)
-	{
-		HandheldActor->SetActorHiddenInGame(true);
-	}
-	// End Mod
+	
 
 	bDeviceAnimating = false;
 	bDeviceOpening = false;
@@ -842,7 +806,7 @@ void ADARKCharacter::Respawn()
 	}
 	if (HandheldActor)
 	{
-		HandheldActor->SetActorHiddenInGame(true);
+		HandheldActor->SetActorHiddenInGame(false);
 	}
 
 	SetActorLocation(SpawnLocation);
