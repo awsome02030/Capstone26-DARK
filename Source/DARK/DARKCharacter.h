@@ -213,6 +213,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	void ReduceOxygen(int Amount);
 
+	UFUNCTION(BlueprintCallable)
+	void ChangeOxygenRate(float rate);
+
 	UPROPERTY(BlueprintReadWrite, Category = "UI")
 	bool bIsInDeathZone = false;
 

@@ -167,7 +167,7 @@ void ADARKCharacter::BeginPlay()
 		OxygenTimerHandle,
 		this,
 		&ADARKCharacter::OxygenCountdown,
-		2,
+		2.0f,
 		true
 	);
 }
@@ -748,8 +748,6 @@ void ADARKCharacter::Die()
 		LowOxygenAudioComponent->Stop();
 	}
 
-
-
 	// Modded - CLose widget when die
 	GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
 
@@ -784,6 +782,8 @@ void ADARKCharacter::Respawn()
 	Oxygen = 100;
 	UpdateLowOxygenAudio();
 	bIsPaused = false;
+
+	ChangeOxygenRate(2.0f);
 
 	UGameplayStatics::SetGamePaused(GetWorld(), false);
 
@@ -904,4 +904,18 @@ void ADARKCharacter::ShowDeviceWidgetDelayed()
 	}
 
 	DeviceWidget->SetVisibility(ESlateVisibility::Visible);
+}
+
+void ADARKCharacter::ChangeOxygenRate(float rate)
+{
+	auto& timer = GetWorld()->GetTimerManager();
+
+	timer.ClearTimer(OxygenTimerHandle);
+	timer.SetTimer(
+		OxygenTimerHandle,
+		this,
+		&ADARKCharacter::OxygenCountdown,
+		rate,
+		true
+	);
 }
