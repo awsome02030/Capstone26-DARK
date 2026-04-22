@@ -271,6 +271,11 @@ void AGridManager::SpawnChosenRoom(const FRoomData& RoomData)
     SpawnLocation += Offset;
     SpawnLocation.Z += RoomZOffset;
 
+    if (RoomData.RoomClass == HauntRoom.RoomClass)
+        SpawnLocation += HauntRoomOffset;
+    else if (RoomData.RoomClass == EscapePodRoom.RoomClass)
+        SpawnLocation += EscapePodOffset;
+
     FRotator SpawnRotation = HallwayRotationForDirection(CurrentExitDirection);
 
     UE_LOG(LogTemp, Warning, TEXT("SpawnChosenRoom: Spawning at %s rotation %s"),

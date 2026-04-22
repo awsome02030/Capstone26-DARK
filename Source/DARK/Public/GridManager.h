@@ -1,5 +1,4 @@
 #pragma once
-
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GridManager.generated.h"
@@ -88,6 +87,12 @@ private:
 
     UPROPERTY(EditAnywhere, Category = "Special Rooms")
     FRoomData EscapePodRoom;
+
+    UPROPERTY(EditAnywhere, Category = "Special Rooms")
+    FVector HauntRoomOffset = FVector::ZeroVector;
+
+    UPROPERTY(EditAnywhere, Category = "Special Rooms")
+    FVector EscapePodOffset = FVector::ZeroVector;
 
     UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
     int32 ResetCount = 0;
