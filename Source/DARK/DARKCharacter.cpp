@@ -737,6 +737,18 @@ void ADARKCharacter::Die()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Player Died"));
 
+	if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+	{
+		PC->PlayerCameraManager->StartCameraFade(
+			0.f,   
+			1.f,   
+			0.3f,  
+			FLinearColor::Black,
+			false,
+			true   
+		);
+	}
+
 	GetCharacterMovement()->DisableMovement();
 	GetController()->SetIgnoreMoveInput(true);
 	GetController()->SetIgnoreLookInput(true);
@@ -771,7 +783,7 @@ void ADARKCharacter::Die()
 		RespawnTimer,
 		this,
 		&ADARKCharacter::Respawn,
-		2.0f,
+		1.5f,
 		false
 	);
 }
@@ -825,10 +837,17 @@ void ADARKCharacter::Respawn()
 	bDeviceAnimating = false;
 	bDeviceOpening = false;
 	OnPlayerRespawned();
-	// ENd Mod
-
-
-
+	if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+	{
+		PC->PlayerCameraManager->StartCameraFade(
+			1.f,   
+			0.f,  
+			0.5f,  
+			FLinearColor::Black,
+			false,
+			false
+		);
+	}
 }
 
 void ADARKCharacter::GravChange()
