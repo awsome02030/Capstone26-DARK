@@ -405,6 +405,7 @@ void ADARKCharacter::Interact()
 			if (Inventory.Contains(NeededItem)) {
 				RemoveItem(NeededItem);
 				Check->requredItems.RemoveAt(i);
+				break;
 			}
 		}
 
@@ -577,10 +578,15 @@ void ADARKCharacter::TogglePauseMenu()
 
 void ADARKCharacter::RemoveItem(const FItemData& Data)
 {
-	Inventory.RemoveAll([&](const FItemData& Item)
+	int i = Inventory.IndexOfByPredicate([&](const FItemData& Item)
 		{
 			return Item.ItemName == Data.ItemName;
 		});
+
+	if (i != INDEX_NONE)
+	{
+		Inventory.RemoveAt(i);
+	}
 
 	if (InventoryWidget)
 	{
@@ -714,6 +720,7 @@ void ADARKCharacter::OxygenCountdown()
 	UpdateLowOxygenAudio();
 
 	if (Oxygen == 0) {
+		ChangeOxygenRate(0);
 		TakeDamagePlayer(MaxHealth);
 	}
 }
@@ -909,6 +916,7 @@ void ADARKCharacter::ReduceOxygen(int Amount)
 
 	if (Oxygen == 0)
 	{
+		ChangeOxygenRate(0);
 		TakeDamagePlayer(MaxHealth);
 	}
 }

@@ -198,6 +198,8 @@ public:
 	void Respawn();
 
 	void TogglePauseMenu();
+
+	UFUNCTION(BlueprintCallable)
 	void GravChange();
 
 	void ShowRoomSelectWidget(const TArray<FRoomData>& Choices);
@@ -224,6 +226,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 	bool HasAudioTape = false;
+
+	UPROPERTY(BlueprintReadWrite)
+	int grav = 0;
 
 protected:
 	void BeginPlay();
@@ -259,7 +264,6 @@ protected:
 	void OxygenCountdown();
 
 	FHitResult InteractHitResult;
-	int grav = 0;
 
 protected:
 
