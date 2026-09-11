@@ -340,6 +340,7 @@ void ADARKCharacter::InteractCheck()
 
 	if (bHit && Hit.GetActor() && (Hit.GetActor()->IsA<AItem>() || Hit.GetActor()->IsA<APuzzleInteractable>() || Hit.GetActor()->IsA<AOxygenTank>()))
 	{
+		Hit.GetActor.()->SetOverlayMaterial(MM_HighlightOverlay);
 		if (Hit.GetActor()->IsA<APuzzleInteractable>()) 
 		{
 			APuzzleInteractable* interactable = Cast<APuzzleInteractable>(Hit.GetActor());
