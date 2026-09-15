@@ -340,30 +340,39 @@ void ADARKCharacter::InteractCheck()
 
 	if (bHit && Hit.GetActor() && (Hit.GetActor()->IsA<AItem>() || Hit.GetActor()->IsA<APuzzleInteractable>() || Hit.GetActor()->IsA<AOxygenTank>()))
 	{
-		Hit.GetActor.()->SetOverlayMaterial(MM_HighlightOverlay);
+		LastHitObject = Hit.GetActor();
+
 		if (Hit.GetActor()->IsA<APuzzleInteractable>()) 
 		{
 			APuzzleInteractable* interactable = Cast<APuzzleInteractable>(Hit.GetActor());
 
 			if (interactable->used == false)
 			{
-				InteractWidget->SetVisibility(ESlateVisibility::Visible);
+				LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(Outline);
 				InteractHitResult = Hit;
 			}
 			else 
 			{
-				InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
+				if (IsValid(LastHitObject)) {
+					LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(nullptr);
+					LastHitObject = NULL;
+				}
+
 				InteractHitResult = FHitResult();
 			}
 		}
 		else {
-			InteractWidget->SetVisibility(ESlateVisibility::Visible);
+			LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(Outline);
 			InteractHitResult = Hit;
 		}
 	}
 	else
 	{
-		InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
+		if (IsValid(LastHitObject)) {
+			LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(nullptr);
+			LastHitObject = NULL;
+		}
+
 		InteractHitResult = FHitResult();
 	}
 }
