@@ -8,6 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
 #include "Item.h"
+#include "BreakableVial.h"
 #include "InventoryWidget.h"
 #include "InventoryEntry.h"
 #include "ItemDatabase.h"
@@ -338,7 +339,11 @@ void ADARKCharacter::InteractCheck()
 
 	bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_GameTraceChannel1, Params);
 
-	if (bHit && Hit.GetActor() && (Hit.GetActor()->IsA<AItem>() || Hit.GetActor()->IsA<APuzzleInteractable>() || Hit.GetActor()->IsA<AOxygenTank>()))
+	if (bHit && Hit.GetActor() &&
+		(Hit.GetActor()->IsA<AItem>() ||
+			Hit.GetActor()->IsA<APuzzleInteractable>() ||
+			Hit.GetActor()->IsA<AOxygenTank>() ||
+			Hit.GetActor()->IsA<ABreakableVial>()))
 	{
 		LastHitObject = Hit.GetActor();
 
@@ -426,17 +431,24 @@ void ADARKCharacter::Interact()
 			Check->OnPuzzleComplete();
 		}
 	}
-	else if (AOxygenTank* Tank = Cast<AOxygenTank>(InteractHitResult.GetActor())) {
+	else if (AOxygenTank* Tank = Cast<AOxygenTank>(InteractHitResult.GetActor()))
+	{
 		Tank->Destroy();
 
-		if (Oxygen + Tank->Oxygen > 100) {
+		if (Oxygen + Tank->Oxygen > 100)
+		{
 			Oxygen = 100;
 		}
-		else {
+		else
+		{
 			Oxygen += Tank->Oxygen;
 		}
 
 		UpdateLowOxygenAudio();
+	}
+	else if (ABreakableVial* Vial = Cast<ABreakableVial>(InteractHitResult.GetActor()))
+	{
+		Vial->Interact();
 	}
 }
 
