@@ -812,7 +812,7 @@ void ADARKCharacter::Die()
 		RespawnTimer,
 		this,
 		&ADARKCharacter::Respawn,
-		1.5f,
+		3.0f,
 		false
 	);
 }
