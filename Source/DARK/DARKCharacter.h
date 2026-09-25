@@ -23,6 +23,7 @@ class UInventoryWidget;
 struct FInputActionValue;
 class USoundBase;
 class UAudioComponent;
+class UMaterialInterface;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -164,8 +165,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Audio")
 	float LowOxygenThreshold = 20.f;
 
-
-
 public:
 	ADARKCharacter();
 
@@ -229,6 +228,11 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 	int grav = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Outline")
+	UMaterialInterface* Outline;
+
+	AActor* LastHitObject = NULL;
 
 protected:
 	void BeginPlay();

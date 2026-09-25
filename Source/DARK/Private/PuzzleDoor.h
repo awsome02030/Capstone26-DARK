@@ -25,8 +25,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door|Advanced")
 	AGridManager* GridManager;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Door")
+	bool bIsLocked = false;
+
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Door")
 	void OpenDoor();
 
 	void OpenDoor_Implementation();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Door")
+	bool CanOpen() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Door")
+	void SetDoorLocked(bool bLocked);
 };
