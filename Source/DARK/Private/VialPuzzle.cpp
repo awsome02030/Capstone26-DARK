@@ -4,28 +4,28 @@
 #include "Item.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
-#include "TimerManager.h"
+#include <DARKCharacter.h>
 
 AVialPuzzle::AVialPuzzle()
 {
 	PrimaryActorTick.bCanEverTick = false;
-
-	RequiredOrder = {
-		EVialColor::Red,
-		EVialColor::Blue,
-		EVialColor::Yellow
-	};
 }
 
 void AVialPuzzle::BeginPlay()
 {
 	Super::BeginPlay();
 
-	for (ABreakableVial* Vial : Vials)
+	TArray<AActor*> Actors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABreakableVial::StaticClass(), Actors);
+
+
+	for (AActor* Vial : Actors)
 	{
-		if (Vial)
+		ABreakableVial* Vial2 = Cast<ABreakableVial>(Vial);
+
+		if (Vial2)
 		{
-			Vial->OnVialBroken.AddDynamic(
+			Vial2->OnVialBroken.AddDynamic(
 				this,
 				&AVialPuzzle::HandleVialBroken
 			);
@@ -40,9 +40,9 @@ void AVialPuzzle::HandleVialBroken(ABreakableVial* BrokenVial)
 		return;
 	}
 
-	if (CurrentStep >= RequiredOrder.Num())
+	if (CurrentStep >= RequiredOrder.Num() && !bSolved)
 	{
-		return;
+		FailPuzzle();
 	}
 
 	EVialColor ExpectedColor = RequiredOrder[CurrentStep];
@@ -51,50 +51,39 @@ void AVialPuzzle::HandleVialBroken(ABreakableVial* BrokenVial)
 	{
 		CurrentStep++;
 
+			ADARKCharacter* player = Cast<ADARKCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+			player->vialSolved = true;
+
+			GEngine->AddOnScreenDebugMessage(
+				-1, 
+				5.0f,
+				FColor::Red,
+				TEXT("Correct Vial")
+			);
+
 		if (CurrentStep >= RequiredOrder.Num())
 		{
 			bSolved = true;
+
+			player->vialSolved = true;
+
+			GEngine->AddOnScreenDebugMessage(
+				-1, 
+				5.0f,
+				FColor::Red,
+				TEXT("Puzzle Passed")
+			);
 
 			SpawnReward();
 
 			OnPuzzleSolved.Broadcast();
 		}
 	}
-	else
-	{
-		FailPuzzle();
-	}
 }
 
 void AVialPuzzle::FailPuzzle()
 {
-	FailedAttempts++;
-
 	OnPuzzleFailed.Broadcast();
-
-	if (bResetOnFail && FailedAttempts <= MaxFailedAttempts)
-	{
-		GetWorld()->GetTimerManager().SetTimer(
-			ResetTimerHandle,
-			this,
-			&AVialPuzzle::ResetPuzzle,
-			ResetDelay,
-			false
-		);
-	}
-}
-
-void AVialPuzzle::ResetPuzzle()
-{
-	CurrentStep = 0;
-
-	for (ABreakableVial* Vial : Vials)
-	{
-		if (Vial)
-		{
-			Vial->ResetVial();
-		}
-	}
 }
 
 void AVialPuzzle::SpawnReward()

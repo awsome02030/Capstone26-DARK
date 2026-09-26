@@ -234,6 +234,9 @@ public:
 
 	AActor* LastHitObject = NULL;
 
+	UPROPERTY(BlueprintReadWrite)
+	bool vialSolved = false;
+
 protected:
 	void BeginPlay();
 

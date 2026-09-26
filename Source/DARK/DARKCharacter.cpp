@@ -823,6 +823,7 @@ void ADARKCharacter::Respawn()
 	Oxygen = 100;
 	UpdateLowOxygenAudio();
 	bIsPaused = false;
+	vialSolved = false;
 
 	ChangeOxygenRate(2.0f);
 
@@ -887,7 +888,7 @@ void ADARKCharacter::GravChange()
 		if (grav == 0) {
 			move->GravityScale = 1.0;
 			move->JumpZVelocity = 420.0;
-			move->MaxWalkSpeed = 480.0;
+			move->MaxWalkSpeed = 1000.0;
 			move->MaxAcceleration = 2048.0;
 			move->BrakingDecelerationWalking = 2048.0;
 

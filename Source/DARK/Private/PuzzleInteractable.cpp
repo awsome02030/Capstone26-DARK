@@ -1,5 +1,7 @@
 #include "PuzzleInteractable.h"
 #include "PuzzleDoor.h"
+#include "VialPuzzle.h"
+#include "BreakableVial.h"
 #include "GridManager.h"
 #include "Kismet/GameplayStatics.h"
 

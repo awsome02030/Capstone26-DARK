@@ -26,12 +26,17 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Puzzle")
 	FOnPuzzleFailed OnPuzzleFailed;
 
-protected:
 	UPROPERTY(EditAnywhere, Category = "Puzzle|Order")
 	TArray<EVialColor> RequiredOrder;
 
-	UPROPERTY(EditInstanceOnly, Category = "Puzzle")
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bSolved = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Puzzle")
 	TArray<ABreakableVial*> Vials;
+
+protected:
 
 	UPROPERTY(EditAnywhere, Category = "Puzzle|Reward")
 	TSubclassOf<AItem> ItemToSpawn;
@@ -39,27 +44,13 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Puzzle|Reward")
 	float SpawnDistance = 150.0f;
 
-	UPROPERTY(EditAnywhere, Category = "Puzzle")
-	bool bResetOnFail = true;
-
-	UPROPERTY(EditAnywhere, Category = "Puzzle", meta = (EditCondition = "bResetOnFail"))
-	float ResetDelay = 1.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Puzzle")
-	int32 MaxFailedAttempts = 3;
-
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
 	void HandleVialBroken(ABreakableVial* BrokenVial);
 
 	void FailPuzzle();
-	void ResetPuzzle();
 	void SpawnReward();
 
 	int32 CurrentStep = 0;
-	int32 FailedAttempts = 0;
-	bool bSolved = false;
-
-	FTimerHandle ResetTimerHandle;
 };
