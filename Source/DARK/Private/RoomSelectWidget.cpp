@@ -13,11 +13,24 @@ bool URoomSelectWidget::Initialize()
     return true;
 }
 
+void URoomSelectWidget::SetSlotVisible(UButton* Button, UTextBlock* Text, bool bVisible)
+{
+    const ESlateVisibility NewVisibility = bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
+
+    if (Button) Button->SetVisibility(NewVisibility);
+    if (Text) Text->SetVisibility(NewVisibility);
+}
+
 void URoomSelectWidget::SetupRoomButtons(const TArray<FRoomData>& Rooms)
 {
-    if (RoomText1 && Rooms.Num() > 0) RoomText1->SetText(FText::FromString(Rooms[0].RoomName));
-    if (RoomText2 && Rooms.Num() > 1) RoomText2->SetText(FText::FromString(Rooms[1].RoomName));
-    if (RoomText3 && Rooms.Num() > 2) RoomText3->SetText(FText::FromString(Rooms[2].RoomName));
+    if (RoomText1) RoomText1->SetText(Rooms.IsValidIndex(0) ? FText::FromString(Rooms[0].RoomName) : FText::GetEmpty());
+    SetSlotVisible(RoomButton1, RoomText1, Rooms.IsValidIndex(0));
+
+    if (RoomText2) RoomText2->SetText(Rooms.IsValidIndex(1) ? FText::FromString(Rooms[1].RoomName) : FText::GetEmpty());
+    SetSlotVisible(RoomButton2, RoomText2, Rooms.IsValidIndex(1));
+
+    if (RoomText3) RoomText3->SetText(Rooms.IsValidIndex(2) ? FText::FromString(Rooms[2].RoomName) : FText::GetEmpty());
+    SetSlotVisible(RoomButton3, RoomText3, Rooms.IsValidIndex(2));
 }
 
 void URoomSelectWidget::HandleButton1Clicked()

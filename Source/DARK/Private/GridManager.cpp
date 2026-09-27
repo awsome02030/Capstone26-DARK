@@ -84,6 +84,18 @@ const TArray<FRoomData>& AGridManager::GetCurrentRoomPool() const
     }
 }
 
+TArray<FRoomData>& AGridManager::GetCurrentRoomPoolMutable()
+{
+    switch (ResetCount)
+    {
+    case 0: return GameStartPool;
+    case 1: return Reset1Pool;
+    case 2: return Reset2Pool;
+    case 3: return Reset3Pool;
+    default: return Reset3Pool;
+    }
+}
+
 void AGridManager::SpawnAnchorRoom()
 {
     if (!AnchorRoomBP)
@@ -181,9 +193,9 @@ void AGridManager::ShowRoomSelectWidget()
 
     const TArray<FRoomData>& ActivePool = GetCurrentRoomPool();
 
-    if (ActivePool.Num() < 3)
+    if (ActivePool.Num() < 1)
     {
-        UE_LOG(LogTemp, Error, TEXT("Active room pool must have at least 3 entries, currently has %d"), ActivePool.Num());
+        UE_LOG(LogTemp, Error, TEXT("Active room pool is empty, cannot show room select"));
         return;
     }
 
@@ -197,26 +209,34 @@ void AGridManager::ShowRoomSelectWidget()
     }
 
     PendingRoomChoices.Empty();
+    PendingRoomChoiceIndices.Empty();
     TArray<int32> UsedIndices;
 
-    while (PendingRoomChoices.Num() < 3)
+    const int32 NumChoices = FMath::Min(3, ActivePool.Num());
+
+    while (PendingRoomChoices.Num() < NumChoices)
     {
         int32 Idx = FMath::RandRange(0, ActivePool.Num() - 1);
         if (!UsedIndices.Contains(Idx))
         {
             UsedIndices.Add(Idx);
             PendingRoomChoices.Add(ActivePool[Idx]);
+            PendingRoomChoiceIndices.Add(Idx);
         }
     }
 
-    if (ResetCount >= 1)
+    if (ResetCount >= 1 && PendingRoomChoices.Num() > 0)
     {
-        PendingRoomChoices[FMath::RandRange(0, 2)] = HauntRoom;
+        int32 SlotIdx = FMath::RandRange(0, PendingRoomChoices.Num() - 1);
+        PendingRoomChoices[SlotIdx] = HauntRoom;
+        PendingRoomChoiceIndices[SlotIdx] = -1;
     }
 
-    if (ResetCount >= 2)
+    if (ResetCount >= 2 && PendingRoomChoices.Num() > 0)
     {
-        PendingRoomChoices[FMath::RandRange(0, 2)] = EscapePodRoom;
+        int32 SlotIdx = FMath::RandRange(0, PendingRoomChoices.Num() - 1);
+        PendingRoomChoices[SlotIdx] = EscapePodRoom;
+        PendingRoomChoiceIndices[SlotIdx] = -1;
     }
 
     ADARKCharacter* Character = Cast<ADARKCharacter>(
@@ -241,6 +261,21 @@ void AGridManager::OnRoomChosen(int32 ChosenIndex)
 
     UE_LOG(LogTemp, Warning, TEXT("OnRoomChosen: Spawning room type: %s"),
         *PendingRoomChoices[ChosenIndex].RoomName);
+
+    if (PendingRoomChoiceIndices.IsValidIndex(ChosenIndex))
+    {
+        int32 PoolIdx = PendingRoomChoiceIndices[ChosenIndex];
+        if (PoolIdx != -1)
+        {
+            TArray<FRoomData>& MutablePool = GetCurrentRoomPoolMutable();
+            if (MutablePool.IsValidIndex(PoolIdx))
+            {
+                UE_LOG(LogTemp, Warning, TEXT("Removing '%s' from pool (index %d), %d entries will remain"),
+                    *MutablePool[PoolIdx].RoomName, PoolIdx, MutablePool.Num() - 1);
+                MutablePool.RemoveAt(PoolIdx);
+            }
+        }
+    }
 
     SpawnChosenRoom(PendingRoomChoices[ChosenIndex]);
 }
@@ -297,6 +332,11 @@ void AGridManager::SpawnChosenRoom(const FRoomData& RoomData)
 
         SpawnedRooms.Add(NextCell, Room);
         SpawnHallway(CurrentExitRoomCell, NextCell, CurrentExitDirection);
+
+        if (APuzzleDoor* ExitDoor = Cast<APuzzleDoor>(CurrentExitDoor))
+        {
+            ExitDoor->OnRoomReady();
+        }
 
         AGridManager* Self = this;
         ARoomBase* RoomRef = Room;

@@ -188,6 +188,13 @@ void ADARKCharacter::ShowRoomSelectWidget(const TArray<FRoomData>& Choices)
 		return;
 	}
 
+	if (RoomSelectWidget)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ShowRoomSelectWidget: A widget already exists, removing it first"));
+		RoomSelectWidget->RemoveFromParent();
+		RoomSelectWidget = nullptr;
+	}
+
 	RoomSelectWidget = CreateWidget<URoomSelectWidget>(PC, RoomSelectWidgetClass);
 	if (!RoomSelectWidget)
 	{

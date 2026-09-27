@@ -98,6 +98,7 @@ private:
     int32 ResetCount = 0;
 
     const TArray<FRoomData>& GetCurrentRoomPool() const;
+    TArray<FRoomData>& GetCurrentRoomPoolMutable();
 
     UPROPERTY(EditAnywhere, Category = "Rooms")
     TSubclassOf<ARoomBase> AnchorRoomBP;
@@ -120,6 +121,7 @@ private:
     TMap<FIntPoint, ARoomBase*> SpawnedRooms;
     TMap<FIntPoint, AActor*> SpawnedHallways;
     TArray<FRoomData> PendingRoomChoices;
+    TArray<int32> PendingRoomChoiceIndices;
 
     AActor* CurrentExitDoor = nullptr;
     EDoorDirection CurrentExitDirection = EDoorDirection::North;

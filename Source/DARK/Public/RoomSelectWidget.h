@@ -41,4 +41,6 @@ private:
     UFUNCTION() void HandleButton1Clicked();
     UFUNCTION() void HandleButton2Clicked();
     UFUNCTION() void HandleButton3Clicked();
+
+    void SetSlotVisible(UButton* Button, UTextBlock* Text, bool bVisible);
 };
