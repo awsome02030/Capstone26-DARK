@@ -409,8 +409,12 @@ void ADARKCharacter::Interact()
 				return ItemData.Class == InteractHitResult.GetActor()->GetClass();
 				});
 			
-			if (Data->ItemName == "Tape") {
+			if (Data->ItemName == "Tape")
+			{
 				HasAudioTape = true;
+
+				CollectedAudioLogs.AddUnique(TEXT("Cargo_01"));
+
 				InteractHitResult.GetActor()->Destroy();
 			}
 			else {
