@@ -226,6 +226,9 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	bool HasAudioTape = false;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Audio Logs")
+	TArray<FName> CollectedAudioLogs;
+
 	UPROPERTY(BlueprintReadWrite)
 	int grav = 0;
 
