@@ -11,10 +11,12 @@ enum class ERoomType : uint8
     None UMETA(DisplayName = "None"),
     Laboratory,
     Equation,
-    Briefing,
+    Security,
     CommunicationHub,
     CargoMaintenance,
-    FusionReactor
+    FusionReactor,
+    Haunt,
+    EscapePods
 };
 
 UENUM(BlueprintType)
@@ -68,6 +70,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Grid")
     bool IsCellFreeInDirection(AActor* Door, EDoorDirection Direction);
 
+    UPROPERTY(BlueprintReadOnly, Category = "Rooms")
+    TArray<FRoomData> PendingRoomChoices;
+
 private:
 
     UPROPERTY(EditAnywhere, Category = "Rooms")
@@ -120,7 +125,6 @@ private:
 
     TMap<FIntPoint, ARoomBase*> SpawnedRooms;
     TMap<FIntPoint, AActor*> SpawnedHallways;
-    TArray<FRoomData> PendingRoomChoices;
     TArray<int32> PendingRoomChoiceIndices;
 
     AActor* CurrentExitDoor = nullptr;
