@@ -911,8 +911,8 @@ void ADARKCharacter::GravChange()
 		if (grav == 0) {
 			move->GravityScale = 1.0;
 			move->JumpZVelocity = 420.0;
-			move->MaxWalkSpeed = 1000.0;
-			move->MaxAcceleration = 2048.0;
+			move->MaxWalkSpeed = 450.0;
+			move->MaxAcceleration = 450.0;
 			move->BrakingDecelerationWalking = 2048.0;
 
 			grav = 1;
@@ -920,8 +920,8 @@ void ADARKCharacter::GravChange()
 		else {
 			move->GravityScale = 0.067;
 			move->JumpZVelocity = 120.0;
-			move->MaxWalkSpeed = 240.0;
-			move->MaxAcceleration = 250.0;
+			move->MaxWalkSpeed = 225.0;
+			move->MaxAcceleration = 225.0;
 			move->BrakingDecelerationWalking = 0.0;
 
 			grav = 0;
