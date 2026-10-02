@@ -21,6 +21,7 @@
 #include <EnhancedInputSubsystems.h>
 #include "DARK.h"
 #include "PuzzleInteractable.h"
+#include "PasswordKeypad.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/TextBlock.h"
@@ -404,41 +405,52 @@ void ADARKCharacter::Interact()
 
 	if (AItem* Item = Cast<AItem>(InteractHitResult.GetActor()))
 	{
-		if (Inventory.Num() <= 5) {
+		if (Inventory.Num() <= 5)
+		{
 			FItemData* Data = ItemDatabase->Items.FindByPredicate([&](const FItemData& ItemData) {
 				return ItemData.Class == InteractHitResult.GetActor()->GetClass();
 				});
-			
+
 			if (Data->ItemName == "Tape")
 			{
 				HasAudioTape = true;
-
 				CollectedAudioLogs.AddUnique(TEXT("Cargo_01"));
-
 				InteractHitResult.GetActor()->Destroy();
 			}
-			else {
+			else
+			{
 				Inventory.Emplace(*Data);
 				InteractHitResult.GetActor()->Destroy();
 			}
-
 		}
 	}
-	else if (APuzzleInteractable* Check = Cast<APuzzleInteractable>(InteractHitResult.GetActor())) {
-		for (int i = Check->requredItems.Num() - 1; i >= 0; i--) {
+	else if (APasswordKeypad* Keypad = Cast<APasswordKeypad>(InteractHitResult.GetActor()))
+	{
+		Keypad->Interact(this);
+		return;
+	}
+	else if (APuzzleInteractable* Check = Cast<APuzzleInteractable>(InteractHitResult.GetActor()))
+	{
+		for (int i = Check->requredItems.Num() - 1; i >= 0; i--)
+		{
 			FItemData& NeededItem = Check->requredItems[i];
 
-			if (Inventory.Contains(NeededItem)) {
+			if (Inventory.Contains(NeededItem))
+			{
 				RemoveItem(NeededItem);
 				Check->requredItems.RemoveAt(i);
 				break;
 			}
 		}
 
-		if (Check->requredItems.Num() == 0 && Check->interactableType == 2) {
+		if (Check->requredItems.Num() == 0 && Check->interactableType == 2)
+		{
 			Check->DecreaseNeeded();
 		}
-		else if (Check->requredItems.Num() == 0 && Check->completeNeeded == 0 && Check->interactableType == 1) {
+		else if (Check->requredItems.Num() == 0 &&
+			Check->completeNeeded == 0 &&
+			Check->interactableType == 1)
+		{
 			Check->OnPuzzleComplete();
 		}
 	}
