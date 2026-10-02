@@ -11,11 +11,7 @@ void APasswordKeypad::Interact(ADARKCharacter* PlayerCharacter)
         return;
     }
 
-    if (PasswordWidget)
-    {
-        return;
-    }
-
+    PasswordWidget = nullptr;
     InteractingPlayer = PlayerCharacter;
 
     OpenPasswordWidget();
@@ -88,27 +84,25 @@ void APasswordKeypad::PasswordCompleted(bool bCorrect)
 
 void APasswordKeypad::ClosePasswordWidget()
 {
-    if (!InteractingPlayer)
-    {
-        return;
-    }
-
-    APlayerController* PC = Cast<APlayerController>(
-        InteractingPlayer->GetController()
-    );
-
     if (PasswordWidget)
     {
         PasswordWidget->RemoveFromParent();
         PasswordWidget = nullptr;
     }
 
-    if (PC)
+    if (InteractingPlayer)
     {
-        PC->SetIgnoreMoveInput(false);
-        PC->SetIgnoreLookInput(false);
-        PC->SetInputMode(FInputModeGameOnly());
-        PC->bShowMouseCursor = false;
+        APlayerController* PC = Cast<APlayerController>(
+            InteractingPlayer->GetController()
+        );
+
+        if (PC)
+        {
+            PC->SetIgnoreMoveInput(false);
+            PC->SetIgnoreLookInput(false);
+            PC->SetInputMode(FInputModeGameOnly());
+            PC->bShowMouseCursor = false;
+        }
     }
 
     InteractingPlayer = nullptr;
