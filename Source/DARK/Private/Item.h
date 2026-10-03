@@ -6,12 +6,13 @@
 #include "Engine/StaticMeshActor.h"
 #include "Item.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class AItem : public AStaticMeshActor
 {
 	GENERATED_BODY()
-	
+
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio Log")
+	FName AudioLogID = NAME_None;
 };

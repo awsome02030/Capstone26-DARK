@@ -414,8 +414,13 @@ void ADARKCharacter::Interact()
 			if (Data->ItemName == "Tape")
 			{
 				HasAudioTape = true;
-				CollectedAudioLogs.AddUnique(TEXT("Cargo_01"));
-				InteractHitResult.GetActor()->Destroy();
+
+				if (!Item->AudioLogID.IsNone())
+				{
+					CollectedAudioLogs.AddUnique(Item->AudioLogID);
+				}
+
+				Item->Destroy();
 			}
 			else
 			{
