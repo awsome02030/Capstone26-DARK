@@ -12,6 +12,10 @@ class DARK_API ARoomBase : public AActor
     GENERATED_BODY()
 public:
     ARoomBase();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Room")
+    void ToggleKeypads();
+
 protected:
     virtual void BeginPlay() override;
 public:
@@ -26,6 +30,13 @@ public:
 
     UPROPERTY(BlueprintReadOnly, Category = "Room")
     bool bDoorOpened = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Puzzle")
+    float PuzzleTimer = 0.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Puzzle", DisplayName = "Puzzle Won?")
+    bool bPuzzleWon = false;
+
 private:
     UPROPERTY()
     AGridManager* GridManager = nullptr;
