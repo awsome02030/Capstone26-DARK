@@ -73,7 +73,7 @@ void APuzzleInteractable::OnPuzzleComplete()
 	}
 
 	used = true;
-	GridManager->ShowRoomSelectWidget();
+	GridManager->ShowRoomSelectWidget(this);
 }
 
 void APuzzleInteractable::DecreaseNeeded()

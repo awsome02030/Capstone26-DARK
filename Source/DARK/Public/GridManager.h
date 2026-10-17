@@ -4,6 +4,7 @@
 #include "GridManager.generated.h"
 
 class ARoomBase;
+class AActor;
 
 UENUM(BlueprintType)
 enum class ERoomType : uint8
@@ -59,10 +60,13 @@ public:
     void ResetGrid();
 
     UFUNCTION(BlueprintCallable, Category = "Grid")
-    void ShowRoomSelectWidget();
+    void ShowRoomSelectWidget(AActor* InteractingPuzzle);
 
     UFUNCTION()
     void OnRoomChosen(int32 ChosenIndex);
+
+    UPROPERTY(BlueprintReadOnly, Category = "Room Select")
+    AActor* CurrentInteractingPuzzle = nullptr;
 
     UFUNCTION(BlueprintCallable, Category = "Grid")
     void RegisterExitDoor(AActor* Door, EDoorDirection Direction);

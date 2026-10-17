@@ -187,8 +187,10 @@ bool AGridManager::IsCellFreeInDirection(AActor* Door, EDoorDirection Direction)
     return false;
 }
 
-void AGridManager::ShowRoomSelectWidget()
+void AGridManager::ShowRoomSelectWidget(AActor* InteractingPuzzle)
 {
+    CurrentInteractingPuzzle = InteractingPuzzle;
+
     UE_LOG(LogTemp, Warning, TEXT("ShowRoomSelectWidget CALLED"));
 
     const TArray<FRoomData>& ActivePool = GetCurrentRoomPool();
