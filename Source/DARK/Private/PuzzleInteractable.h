@@ -16,6 +16,9 @@ class APuzzleInteractable : public AStaticMeshActor
 public:
 	virtual void BeginPlay() override;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Puzzle")
+	bool bShowRoomSelectOnComplete = true;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
 	TArray<FName> actorIDList;
 
@@ -33,6 +36,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
 	int completeNeeded;
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Puzzle")
+	void OnCompleteNeededChanged(int32 NewCompleteNeeded);
 
 	/*
 	1 = Keypad / thing that opens a door
