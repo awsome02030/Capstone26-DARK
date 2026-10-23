@@ -39,6 +39,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Door")
 	void SetDoorLocked(bool bLocked);
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "Door")
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Door")
 	void OnRoomReady();
 };
