@@ -82,6 +82,14 @@ void APuzzleInteractable::OnPuzzleComplete()
 
 void APuzzleInteractable::DecreaseNeeded()
 {
+	// This is the specific interactable currently being used:
+	// either FuseBox1 or FuseBox2.
+	if (!used)
+	{
+		used = true;
+		OnFuseInserted();
+	}
+
 	for (AActor* Actor : TiedClass)
 	{
 		APuzzleInteractable* interactable = Cast<APuzzleInteractable>(Actor);
@@ -90,11 +98,6 @@ void APuzzleInteractable::DecreaseNeeded()
 		{
 			interactable->completeNeeded -= 1;
 			interactable->OnCompleteNeededChanged(interactable->completeNeeded);
-
-			used = true;
-			TiedClass.Remove(interactable);
 		}
-
-
 	}
 }

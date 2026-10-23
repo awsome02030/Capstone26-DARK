@@ -40,6 +40,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Puzzle")
 	void OnCompleteNeededChanged(int32 NewCompleteNeeded);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Puzzle")
+	void OnFuseInserted();
+
 	/*
 	1 = Keypad / thing that opens a door
 	2 = Socket / thing that unlocks another interactable
