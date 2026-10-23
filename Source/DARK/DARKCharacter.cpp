@@ -90,6 +90,7 @@ void ADARKCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(DeviceAction, ETriggerEvent::Started, this, &ADARKCharacter::ToggleDevice);
 		EnhancedInputComponent->BindAction(DebugKillAction, ETriggerEvent::Started, this, &ADARKCharacter::Die);
 		EnhancedInputComponent->BindAction(GravAction, ETriggerEvent::Started, this, &ADARKCharacter::GravChange);
+		EnhancedInputComponent->BindAction(GravAction, ETriggerEvent::Completed, this, &ADARKCharacter::GravChange);
 		EnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Started, this, &ADARKCharacter::TogglePauseMenu);
 	}
 	else
@@ -916,23 +917,19 @@ void ADARKCharacter::GravChange()
 	UCharacterMovementComponent* move = GetCharacterMovement();
 
 	if (move) {
-		if (grav == 0) {
-			move->GravityScale = 1.0;
-			move->JumpZVelocity = 420.0;
-			move->MaxWalkSpeed = 450.0;
-			move->MaxAcceleration = 450.0;
-			move->BrakingDecelerationWalking = 2048.0;
+		if (sprint == 0) {
+			move->MaxWalkSpeed = 1000.0;
 
-			grav = 1;
+			ChangeOxygenRate(0.75f);
+
+			sprint = 1;
 		}
 		else {
-			move->GravityScale = 0.067;
-			move->JumpZVelocity = 120.0;
-			move->MaxWalkSpeed = 225.0;
-			move->MaxAcceleration = 225.0;
-			move->BrakingDecelerationWalking = 0.0;
+			move->MaxWalkSpeed = 350.0;
 
-			grav = 0;
+			ChangeOxygenRate(2.0f);
+
+			sprint = 0;
 		}
 	}
 }

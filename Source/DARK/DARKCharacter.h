@@ -238,7 +238,7 @@ public:
     TArray<FName> CollectedAudioLogs;
 
     UPROPERTY(BlueprintReadWrite)
-    int grav = 0;
+    int sprint = 0;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Outline")
     UMaterialInterface* Outline;
