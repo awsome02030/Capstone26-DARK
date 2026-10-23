@@ -1,3 +1,4 @@
+
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #pragma once
@@ -33,259 +34,263 @@ DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 UCLASS(abstract)
 class ADARKCharacter : public ACharacter
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
-	/** Pawn mesh: first person view (arms; seen only by self) */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	USkeletalMeshComponent* FirstPersonMesh;
+    /** Pawn mesh: first person view (arms; seen only by self) */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+    USkeletalMeshComponent* FirstPersonMesh;
 
-	/** First person camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* FirstPersonCameraComponent;
+    /** First person camera */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+    UCameraComponent* FirstPersonCameraComponent;
 
 protected:
 
-	UPROPERTY(EditDefaultsOnly)
-	UInputMappingContext* Mapping;
+    UPROPERTY(EditDefaultsOnly)
+    UInputMappingContext* Mapping;
 
-	/** Jump Input Action */
-	UPROPERTY(EditDefaultsOnly)
-	UInputAction* JumpAction;
+    /** Jump Input Action */
+    UPROPERTY(EditDefaultsOnly)
+    UInputAction* JumpAction;
 
-	/** Move Input Action */
-	UPROPERTY(EditDefaultsOnly)
-	UInputAction* MoveAction;
+    /** Move Input Action */
+    UPROPERTY(EditDefaultsOnly)
+    UInputAction* MoveAction;
 
-	/** Look Input Action */
-	UPROPERTY(EditDefaultsOnly)
-	class UInputAction* LookAction;
+    UPROPERTY(EditDefaultsOnly)
+    class UInputAction* LookAction;
 
-	UPROPERTY(EditDefaultsOnly)
-	UInputAction* InteractAction;
-	UPROPERTY(EditDefaultsOnly)
-	UInputAction* InventoryAction;
+    UPROPERTY(EditDefaultsOnly)
+    UInputAction* InteractAction;
 
-	UPROPERTY(EditDefaultsOnly)
-	UInputAction* DeviceAction;
+    UPROPERTY(EditDefaultsOnly)
+    UInputAction* InventoryAction;
 
-	// Testing the Kill with "b"
-	UPROPERTY(EditDefaultsOnly)
-	UInputAction* DebugKillAction;
+    UPROPERTY(EditDefaultsOnly)
+    UInputAction* DeviceAction;
 
-	UPROPERTY(EditDefaultsOnly)
-	UInputAction* GravAction;
+    // Testing the Kill with "b"
+    UPROPERTY(EditDefaultsOnly)
+    UInputAction* DebugKillAction;
 
-	UPROPERTY(EditDefaultsOnly)
-	UInputAction* PauseAction;
+    UPROPERTY(EditDefaultsOnly)
+    UInputAction* GravAction;
 
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<UUserWidget> InteractWidgetClass;
+    UPROPERTY(EditDefaultsOnly)
+    UInputAction* PauseAction;
 
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<UUserWidget> PauseMenuClass;
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<UUserWidget> InteractWidgetClass;
 
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<UUserWidget> HUDWidgetClass;
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<UUserWidget> PauseMenuClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
-	TSubclassOf<UInventoryWidget> InventoryWidgetClass;
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<UUserWidget> HUDWidgetClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
-	TSubclassOf<UUserWidget> DeviceWidgetClass;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+    TSubclassOf<UInventoryWidget> InventoryWidgetClass;
 
-	UPROPERTY()
-	UUserWidget* DeviceWidget = nullptr;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+    TSubclassOf<UUserWidget> DeviceWidgetClass;
 
-	UPROPERTY()
-	UUserWidget* HUDWidget = nullptr;
+    UPROPERTY()
+    UUserWidget* DeviceWidget = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<URoomSelectWidget> RoomSelectWidgetClass;
+    UPROPERTY()
+    UUserWidget* HUDWidget = nullptr;
 
-	UPROPERTY(EditDefaultsOnly)
-	UItemDatabase* ItemDatabase;
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<URoomSelectWidget> RoomSelectWidgetClass;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Device")
-	TSubclassOf<AActor> HandheldClass;
+    UPROPERTY(EditDefaultsOnly)
+    UItemDatabase* ItemDatabase;
 
-	UPROPERTY()
-	AActor* HandheldActor = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Device")
+    TSubclassOf<AActor> HandheldClass;
 
-	UPROPERTY()
-	UUserWidget* InteractWidget = nullptr;
+    UPROPERTY()
+    AActor* HandheldActor = nullptr;
 
-	UPROPERTY()
-	UUserWidget* PauseMenuWidget = nullptr;
+    UPROPERTY()
+    UUserWidget* InteractWidget = nullptr;
 
-	UPROPERTY()
-	URoomSelectWidget* RoomSelectWidget = nullptr;
+    UPROPERTY()
+    UUserWidget* PauseMenuWidget = nullptr;
 
-	UPROPERTY(EditAnywhere, Category = "Device")
-	FRotator HandheldRotation = FRotator(0.f, 0.f, 0.f);
+    UPROPERTY()
+    URoomSelectWidget* RoomSelectWidget = nullptr;
 
-	UPROPERTY(EditAnywhere, Category = "Device")
-	float DeviceAnimDuration = 0.3f;
+    UPROPERTY(EditAnywhere, Category = "Device")
+    FRotator HandheldRotation = FRotator(0.f, 0.f, 0.f);
 
-	UPROPERTY(EditAnywhere, Category = "Device")
-	FVector DeviceStartOffset = FVector(-55.f, -10.f, -40.f);
+    UPROPERTY(EditAnywhere, Category = "Device")
+    float DeviceAnimDuration = 0.3f;
 
-	UPROPERTY(EditAnywhere, Category = "Device")
-	FVector DeviceTargetOffset = FVector(30.f, 12.f, -15.f);
+    UPROPERTY(EditAnywhere, Category = "Device")
+    FVector DeviceStartOffset = FVector(-55.f, -10.f, -40.f);
 
-	UPROPERTY(EditAnywhere, Category = "Device")
-	FRotator DeviceStartRotation = FRotator(20.f, -30.f, -18.f);
+    UPROPERTY(EditAnywhere, Category = "Device")
+    FVector DeviceTargetOffset = FVector(30.f, 12.f, -15.f);
 
-	UPROPERTY(EditAnywhere, Category = "Device")
-	FRotator DeviceTargetRotation = FRotator(0.f, 0.f, 0.f);
+    UPROPERTY(EditAnywhere, Category = "Device")
+    FRotator DeviceStartRotation = FRotator(20.f, -30.f, -18.f);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device")
-	bool bDeviceOpen = false;
+    UPROPERTY(EditAnywhere, Category = "Device")
+    FRotator DeviceTargetRotation = FRotator(0.f, 0.f, 0.f);
 
-	FTimerHandle OxygenTimerHandle;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device")
+    bool bDeviceOpen = false;
 
-	float DeviceAnimTime = 0.f;
-	bool bDeviceAnimating = false;
-	bool bDeviceOpening = false;
-	bool bIsPaused = false;
+    FTimerHandle OxygenTimerHandle;
 
-	FTimerHandle DeviceWidgetDelayHandle;
+    float DeviceAnimTime = 0.f;
+    bool bDeviceAnimating = false;
+    bool bDeviceOpening = false;
+    bool bIsPaused = false;
 
-	void ShowDeviceWidgetDelayed();
+    FTimerHandle DeviceWidgetDelayHandle;
 
-	void SpawnAndAttachHandheld();
-	void ToggleDevice();
+    void ShowDeviceWidgetDelayed();
 
-	//added audio for low oxygen sound like alarm
-	UPROPERTY(EditDefaultsOnly, Category = "Audio")
-	USoundBase* LowOxygenSound;
+    void SpawnAndAttachHandheld();
+    void ToggleDevice();
 
-	UPROPERTY()
-	UAudioComponent* LowOxygenAudioComponent = nullptr;
+    // Added audio for low oxygen sound like alarm
+    UPROPERTY(EditDefaultsOnly, Category = "Audio")
+    USoundBase* LowOxygenSound;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Audio")
-	float LowOxygenThreshold = 20.f;
+    UPROPERTY()
+    UAudioComponent* LowOxygenAudioComponent = nullptr;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Audio")
+    float LowOxygenThreshold = 20.f;
 
 public:
-	ADARKCharacter();
+    ADARKCharacter();
 
-	virtual void Tick(float DeltaTime) override;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+    float LookSensitivity = 1.0f;
 
-	FVector InteractVectorEnd;
-	TArray<FItemData> Inventory;
+    UFUNCTION(BlueprintCallable, Category = "Settings")
+    void SetLookSensitivity(float NewSensitivity);
 
-	UPROPERTY()
-	UInventoryWidget* InventoryWidget = nullptr;
+    virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(BlueprintReadOnly)
-	int Oxygen = 100;
+    FVector InteractVectorEnd;
+    TArray<FItemData> Inventory;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
-	float MaxHealth = 100.f;
+    UPROPERTY()
+    UInventoryWidget* InventoryWidget = nullptr;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")
-	float Health;
+    UPROPERTY(BlueprintReadOnly)
+    int Oxygen = 100;
 
-	void TakeDamagePlayer(float DamageAmount);
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+    float MaxHealth = 100.f;
 
-	UFUNCTION(BlueprintCallable)
-	void Die();
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")
+    float Health;
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnPlayerRespawned();
+    void TakeDamagePlayer(float DamageAmount);
 
-	UFUNCTION(BlueprintCallable)
-	void Respawn();
+    UFUNCTION(BlueprintCallable)
+    void Die();
 
-	void TogglePauseMenu();
+    UFUNCTION(BlueprintImplementableEvent)
+    void OnPlayerRespawned();
 
-	UFUNCTION(BlueprintCallable)
-	void GravChange();
+    UFUNCTION(BlueprintCallable)
+    void Respawn();
 
-	void ShowRoomSelectWidget(const TArray<FRoomData>& Choices);
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void TogglePauseMenu();
 
-	UFUNCTION()
-	void OnRoomChosen(int32 ChosenIndex);
+    UFUNCTION(BlueprintCallable)
+    void GravChange();
 
-	FVector SpawnLocation;
-	AGridManager* GridManagerRef = nullptr;
+    void ShowRoomSelectWidget(const TArray<FRoomData>& Choices);
 
-	void UpdateLowOxygenAudio();
+    UFUNCTION()
+    void OnRoomChosen(int32 ChosenIndex);
 
-	UFUNCTION(BlueprintCallable, Category = "Health")
-	void ReduceOxygen(int Amount);
+    FVector SpawnLocation;
+    AGridManager* GridManagerRef = nullptr;
 
-	UFUNCTION(BlueprintCallable)
-	void ChangeOxygenRate(float rate);
+    void UpdateLowOxygenAudio();
 
-	UPROPERTY(BlueprintReadWrite, Category = "UI")
-	bool bIsInDeathZone = false;
+    UFUNCTION(BlueprintCallable, Category = "Health")
+    void ReduceOxygen(int Amount);
 
-	UPROPERTY(BlueprintReadWrite)
-	float OxygenDrainMultiplier = 1.0f;
+    UFUNCTION(BlueprintCallable)
+    void ChangeOxygenRate(float rate);
 
-	UPROPERTY(BlueprintReadWrite)
-	bool HasAudioTape = false;
+    UPROPERTY(BlueprintReadWrite, Category = "UI")
+    bool bIsInDeathZone = false;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Audio Logs")
-	TArray<FName> CollectedAudioLogs;
+    UPROPERTY(BlueprintReadWrite)
+    float OxygenDrainMultiplier = 1.0f;
 
-	UPROPERTY(BlueprintReadWrite)
-	int grav = 0;
+    UPROPERTY(BlueprintReadWrite)
+    bool HasAudioTape = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Outline")
-	UMaterialInterface* Outline;
+    UPROPERTY(BlueprintReadOnly, Category = "Audio Logs")
+    TArray<FName> CollectedAudioLogs;
 
-	AActor* LastHitObject = NULL;
+    UPROPERTY(BlueprintReadWrite)
+    int grav = 0;
 
-	UPROPERTY(BlueprintReadWrite)
-	bool vialSolved = false;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Outline")
+    UMaterialInterface* Outline;
 
-protected:
-	void BeginPlay();
+    AActor* LastHitObject = NULL;
 
-	/** Called from Input Actions for movement input */
-	void MoveInput(const FInputActionValue& Value);
-
-	/** Called from Input Actions for looking input */
-	void LookInput(const FInputActionValue& Value);
-
-	/** Handles aim inputs from either controls or UI interfaces */
-	UFUNCTION(BlueprintCallable, Category = "Input")
-	virtual void DoAim(float Yaw, float Pitch);
-
-	/** Handles move inputs from either controls or UI interfaces */
-	UFUNCTION(BlueprintCallable, Category = "Input")
-	virtual void DoMove(float Right, float Forward);
-
-	/** Handles jump start inputs from either controls or UI interfaces */
-	UFUNCTION(BlueprintCallable, Category = "Input")
-	virtual void DoJumpStart();
-
-	/** Handles jump end inputs from either controls or UI interfaces */
-	UFUNCTION(BlueprintCallable, Category = "Input")
-	virtual void DoJumpEnd();
-
-	bool PerformInteractTrace(FHitResult& OutHit, float TraceDistance = 1000.f) const;
-
-	void Interact();
-	void InteractCheck();
-	void ToggleInventory();
-	void RemoveItem(const FItemData& data);
-	void OxygenCountdown();
-
-	FHitResult InteractHitResult;
+    UPROPERTY(BlueprintReadWrite)
+    bool vialSolved = false;
 
 protected:
+    void BeginPlay();
 
-	/** Set up input action bindings */
-	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
+    /** Called from Input Actions for movement input */
+    void MoveInput(const FInputActionValue& Value);
+
+    /** Called from Input Actions for looking input */
+    void LookInput(const FInputActionValue& Value);
+
+    /** Handles aim inputs from either controls or UI interfaces */
+    UFUNCTION(BlueprintCallable, Category = "Input")
+    virtual void DoAim(float Yaw, float Pitch);
+
+    /** Handles move inputs from either controls or UI interfaces */
+    UFUNCTION(BlueprintCallable, Category = "Input")
+    virtual void DoMove(float Right, float Forward);
+
+    /** Handles jump start inputs from either controls or UI interfaces */
+    UFUNCTION(BlueprintCallable, Category = "Input")
+    virtual void DoJumpStart();
+
+    /** Handles jump end inputs from either controls or UI interfaces */
+    UFUNCTION(BlueprintCallable, Category = "Input")
+    virtual void DoJumpEnd();
+
+    bool PerformInteractTrace(FHitResult& OutHit, float TraceDistance = 1000.f) const;
+
+    void Interact();
+    void InteractCheck();
+    void ToggleInventory();
+    void RemoveItem(const FItemData& data);
+    void OxygenCountdown();
+
+    FHitResult InteractHitResult;
+
+protected:
+    /** Set up input action bindings */
+    virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 
 public:
+    /** Returns the first person mesh **/
+    USkeletalMeshComponent* GetFirstPersonMesh() const { return FirstPersonMesh; }
 
-	/** Returns the first person mesh **/
-	USkeletalMeshComponent* GetFirstPersonMesh() const { return FirstPersonMesh; }
-
-	/** Returns first person camera component **/
-	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
-
+    /** Returns first person camera component **/
+    UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 };

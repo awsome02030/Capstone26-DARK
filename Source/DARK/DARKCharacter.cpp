@@ -144,10 +144,6 @@ void ADARKCharacter::BeginPlay()
 		}
 		// End
 
-
-
-		bUIReady = true;
-
 		bUIReady = true;
 
 		if (LowOxygenSound)
@@ -250,10 +246,14 @@ void ADARKCharacter::DoAim(float Yaw, float Pitch)
 {
 	if (GetController())
 	{
-		float Sensitivity = 1.0f;
-		AddControllerYawInput(Yaw * Sensitivity);
-		AddControllerPitchInput(Pitch * Sensitivity);
+		AddControllerYawInput(Yaw * LookSensitivity);
+		AddControllerPitchInput(Pitch * LookSensitivity);
 	}
+}
+
+void ADARKCharacter::SetLookSensitivity(float NewSensitivity)
+{
+	LookSensitivity = FMath::Clamp(NewSensitivity, 0.1f, 5.0f);
 }
 
 void ADARKCharacter::DoMove(float Right, float Forward)
@@ -599,6 +599,7 @@ void ADARKCharacter::TogglePauseMenu()
 	bIsPaused = !bIsPaused;
 	PauseMenuWidget->SetVisibility(bIsPaused ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 
+
 	if (bIsPaused)
 	{
 		UGameplayStatics::SetGamePaused(GetWorld(), true);
@@ -607,6 +608,8 @@ void ADARKCharacter::TogglePauseMenu()
 		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 		PC->SetInputMode(InputMode);
 		PC->bShowMouseCursor = true;
+
+		PauseMenuWidget->SetKeyboardFocus();
 
 		GetCharacterMovement()->StopMovementImmediately();
 		GetController()->SetIgnoreMoveInput(true);
