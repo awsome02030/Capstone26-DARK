@@ -798,6 +798,8 @@ void ADARKCharacter::Die()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Player Died"));
 
+	OnPlayerResetStarted();
+
 	if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
 	{
 		PC->PlayerCameraManager->StartCameraFade(
@@ -851,6 +853,7 @@ void ADARKCharacter::Die()
 
 void ADARKCharacter::Respawn()
 {
+	OnPlayerResetStarted();
 	Health = MaxHealth;
 	Oxygen = 100;
 	UpdateLowOxygenAudio();

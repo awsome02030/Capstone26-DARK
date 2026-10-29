@@ -203,6 +203,9 @@ public:
     UFUNCTION(BlueprintCallable)
     void Respawn();
 
+    UFUNCTION(BlueprintImplementableEvent, Category = "Player")
+    void OnPlayerResetStarted();
+
     UFUNCTION(BlueprintCallable, Category = "UI")
     void TogglePauseMenu();
 
