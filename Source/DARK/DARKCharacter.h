@@ -118,6 +118,9 @@ protected:
     UPROPERTY()
     UUserWidget* PauseMenuWidget = nullptr;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+    USoundBase* OxygenPickupSound;
+
     UPROPERTY()
     URoomSelectWidget* RoomSelectWidget = nullptr;
 

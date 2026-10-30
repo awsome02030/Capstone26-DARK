@@ -462,8 +462,6 @@ void ADARKCharacter::Interact()
 	}
 	else if (AOxygenTank* Tank = Cast<AOxygenTank>(InteractHitResult.GetActor()))
 	{
-		Tank->Destroy();
-
 		if (Oxygen + Tank->Oxygen > 100)
 		{
 			Oxygen = 100;
@@ -473,7 +471,15 @@ void ADARKCharacter::Interact()
 			Oxygen += Tank->Oxygen;
 		}
 
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			OxygenPickupSound,
+			Tank->GetActorLocation()
+		);
+
 		UpdateLowOxygenAudio();
+
+		Tank->Destroy();
 	}
 	else if (ABreakableVial* Vial = Cast<ABreakableVial>(InteractHitResult.GetActor()))
 	{
