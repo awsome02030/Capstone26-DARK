@@ -254,6 +254,9 @@ public:
     UPROPERTY(BlueprintReadWrite)
     bool vialSolved = false;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool isPlayer = false;
+
 protected:
     void BeginPlay();
 

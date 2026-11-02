@@ -362,11 +362,13 @@ void ADARKCharacter::InteractCheck()
 
 			if (interactable->used == false)
 			{
+				InteractWidget->SetVisibility(ESlateVisibility::Visible);
 				LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(Outline);
 				InteractHitResult = Hit;
 			}
 			else 
 			{
+				InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
 				if (IsValid(LastHitObject)) {
 					LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(nullptr);
 					LastHitObject = NULL;
@@ -376,13 +378,15 @@ void ADARKCharacter::InteractCheck()
 			}
 		}
 		else {
+			InteractWidget->SetVisibility(ESlateVisibility::Visible);
 			LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(Outline);
 			InteractHitResult = Hit;
 		}
 	}
 	else
 	{
-		if (IsValid(LastHitObject)) {
+		InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
+		if (IsValid(LastHitObject) && isPlayer) {
 			LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(nullptr);
 			LastHitObject = NULL;
 		}

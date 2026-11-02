@@ -51,28 +51,14 @@ void AVialPuzzle::HandleVialBroken(ABreakableVial* BrokenVial)
 	{
 		CurrentStep++;
 
-			ADARKCharacter* player = Cast<ADARKCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-			player->vialSolved = true;
-
-			GEngine->AddOnScreenDebugMessage(
-				-1, 
-				5.0f,
-				FColor::Red,
-				TEXT("Correct Vial")
-			);
+		ADARKCharacter* player = Cast<ADARKCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+		player->vialSolved = true;
 
 		if (CurrentStep >= RequiredOrder.Num())
 		{
 			bSolved = true;
 
 			player->vialSolved = true;
-
-			GEngine->AddOnScreenDebugMessage(
-				-1, 
-				5.0f,
-				FColor::Red,
-				TEXT("Puzzle Passed")
-			);
 
 			SpawnReward();
 
