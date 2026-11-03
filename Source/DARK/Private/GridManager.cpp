@@ -240,13 +240,6 @@ void AGridManager::ShowRoomSelectWidget(AActor* InteractingPuzzle)
         PendingRoomChoiceIndices[SlotIdx] = -1;
     }
 
-    if (ResetCount >= 2 && PendingRoomChoices.Num() > 0)
-    {
-        int32 SlotIdx = FMath::RandRange(0, PendingRoomChoices.Num() - 1);
-        PendingRoomChoices[SlotIdx] = EscapePodRoom;
-        PendingRoomChoiceIndices[SlotIdx] = -1;
-    }
-
     ADARKCharacter* Character = Cast<ADARKCharacter>(
         UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 
