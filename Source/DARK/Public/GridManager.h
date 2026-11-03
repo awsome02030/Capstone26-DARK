@@ -74,6 +74,12 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Grid")
     bool IsCellFreeInDirection(AActor* Door, EDoorDirection Direction);
 
+    UFUNCTION(BlueprintCallable, Category = "Grid")
+    void SpawnEscapePodRoom(AActor* InteractingPuzzle);
+
+    UPROPERTY(BlueprintReadWrite, Category = "Grid")
+    bool bSuppressRoomSelect = false;
+
     UPROPERTY(BlueprintReadOnly, Category = "Rooms")
     TArray<FRoomData> PendingRoomChoices;
 

@@ -57,6 +57,11 @@ void APuzzleInteractable::OnPuzzleComplete()
 		return;
 	}
 
+	if (bSpawnEscapePodOnComplete)
+	{
+		GridManager->bSuppressRoomSelect = true;
+	}
+
 	for (AActor* Actor : TiedClass)
 	{
 		if (!IsValid(Actor)) continue;
@@ -74,7 +79,15 @@ void APuzzleInteractable::OnPuzzleComplete()
 
 	used = true;
 
-	if (bShowRoomSelectOnComplete)
+	UE_LOG(LogTemp, Warning, TEXT("OnPuzzleComplete: %s spawnPod=%d showSelect=%d"),
+		*GetName(), bSpawnEscapePodOnComplete, bShowRoomSelectOnComplete);
+
+	if (bSpawnEscapePodOnComplete)
+	{
+		GridManager->SpawnEscapePodRoom(this);
+		GridManager->bSuppressRoomSelect = false;
+	}
+	else if (bShowRoomSelectOnComplete)
 	{
 		GridManager->ShowRoomSelectWidget(this);
 	}
@@ -82,8 +95,6 @@ void APuzzleInteractable::OnPuzzleComplete()
 
 void APuzzleInteractable::DecreaseNeeded()
 {
-	// This is the specific interactable currently being used:
-	// either FuseBox1 or FuseBox2.
 	if (!used)
 	{
 		used = true;

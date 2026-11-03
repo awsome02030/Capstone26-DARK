@@ -53,6 +53,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Puzzle")
 	EDoorDirection SpawnDirection;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Puzzle")
+	bool bSpawnEscapePodOnComplete = false;
+
 	bool used = false;
 
 	UFUNCTION(BlueprintCallable)

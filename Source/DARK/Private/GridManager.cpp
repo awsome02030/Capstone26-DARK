@@ -189,6 +189,12 @@ bool AGridManager::IsCellFreeInDirection(AActor* Door, EDoorDirection Direction)
 
 void AGridManager::ShowRoomSelectWidget(AActor* InteractingPuzzle)
 {
+    if (bSuppressRoomSelect)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ShowRoomSelectWidget: not able to pop up"));
+        return;
+    }
+
     CurrentInteractingPuzzle = InteractingPuzzle;
 
     UE_LOG(LogTemp, Warning, TEXT("ShowRoomSelectWidget CALLED"));
@@ -407,6 +413,34 @@ void AGridManager::ClearGrid()
             Pair.Value->Destroy();
 
     SpawnedHallways.Empty();
+}
+
+void AGridManager::SpawnEscapePodRoom(AActor* InteractingPuzzle)
+{
+    UE_LOG(LogTemp, Warning, TEXT("SpawnEscapePodRoom CALLED"));
+
+    CurrentInteractingPuzzle = InteractingPuzzle;
+
+    if (!EscapePodRoom.RoomClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("SpawnEscapePodRoom: EscapePodRoom.RoomClass is not set"));
+        return;
+    }
+
+    FIntPoint NextCell = GetNextCell(CurrentExitRoomCell, CurrentExitDirection);
+    if (SpawnedRooms.Contains(NextCell))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("SpawnEscapePodRoom: cell X=%d Y=%d already is occupied"),
+            NextCell.X, NextCell.Y);
+        return;
+    }
+
+    PendingRoomChoices.Empty();
+    PendingRoomChoiceIndices.Empty();
+    PendingRoomChoices.Add(EscapePodRoom);
+    PendingRoomChoiceIndices.Add(-1);
+
+    SpawnChosenRoom(EscapePodRoom);
 }
 
 void AGridManager::ResetGrid()
