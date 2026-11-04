@@ -86,7 +86,7 @@ void ADARKCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ADARKCharacter::MoveInput);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ADARKCharacter::LookInput);
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ADARKCharacter::Interact);
-		EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Started, this, &ADARKCharacter::ToggleInventory);
+		//EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Started, this, &ADARKCharacter::ToggleInventory);
 		EnhancedInputComponent->BindAction(DeviceAction, ETriggerEvent::Started, this, &ADARKCharacter::ToggleDevice);
 		EnhancedInputComponent->BindAction(DebugKillAction, ETriggerEvent::Started, this, &ADARKCharacter::Die);
 		EnhancedInputComponent->BindAction(GravAction, ETriggerEvent::Started, this, &ADARKCharacter::GravChange);
