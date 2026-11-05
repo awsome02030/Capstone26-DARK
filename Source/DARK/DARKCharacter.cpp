@@ -931,7 +931,7 @@ void ADARKCharacter::GravChange()
 
 	if (move) {
 		if (sprint == 0) {
-			move->MaxWalkSpeed = 1000.0;
+			move->MaxWalkSpeed = 600.0;
 
 			ChangeOxygenRate(0.75f);
 
