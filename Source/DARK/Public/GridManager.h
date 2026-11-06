@@ -80,6 +80,9 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "Grid")
     bool bSuppressRoomSelect = false;
 
+    UPROPERTY(BlueprintReadOnly, Category = "Grid")
+    bool bEscapePodRoomSpawned = false;
+
     UPROPERTY(BlueprintReadOnly, Category = "Rooms")
     TArray<FRoomData> PendingRoomChoices;
 

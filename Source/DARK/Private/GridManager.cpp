@@ -434,6 +434,8 @@ void AGridManager::SpawnEscapePodRoom(AActor* InteractingPuzzle)
     PendingRoomChoiceIndices.Add(-1);
 
     SpawnChosenRoom(EscapePodRoom);
+
+    bEscapePodRoomSpawned = true;
 }
 
 void AGridManager::ResetGrid()
