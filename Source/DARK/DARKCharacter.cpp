@@ -362,7 +362,11 @@ void ADARKCharacter::InteractCheck()
 
 			if (interactable->used == false)
 			{
-				InteractWidget->SetVisibility(ESlateVisibility::Visible);
+				InteractWidget->SetVisibility(
+					bHideInteractPrompt
+					? ESlateVisibility::Collapsed
+					: ESlateVisibility::Visible
+				);
 				LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(Outline);
 				InteractHitResult = Hit;
 			}
@@ -378,7 +382,11 @@ void ADARKCharacter::InteractCheck()
 			}
 		}
 		else {
-			InteractWidget->SetVisibility(ESlateVisibility::Visible);
+			InteractWidget->SetVisibility(
+				bHideInteractPrompt
+				? ESlateVisibility::Collapsed
+				: ESlateVisibility::Visible
+			);
 			LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(Outline);
 			InteractHitResult = Hit;
 		}

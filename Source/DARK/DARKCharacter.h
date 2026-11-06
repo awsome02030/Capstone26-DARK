@@ -82,6 +82,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UUserWidget> InteractWidgetClass;
 
+    UPROPERTY(BlueprintReadWrite, Category = "UI")
+    bool bHideInteractPrompt = false;
+
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UUserWidget> PauseMenuClass;
 
