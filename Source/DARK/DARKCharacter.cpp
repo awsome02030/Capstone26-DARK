@@ -89,8 +89,8 @@ void ADARKCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		//EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Started, this, &ADARKCharacter::ToggleInventory);
 		EnhancedInputComponent->BindAction(DeviceAction, ETriggerEvent::Started, this, &ADARKCharacter::ToggleDevice);
 		EnhancedInputComponent->BindAction(DebugKillAction, ETriggerEvent::Started, this, &ADARKCharacter::Die);
-		EnhancedInputComponent->BindAction(GravAction, ETriggerEvent::Started, this, &ADARKCharacter::GravChange);
-		EnhancedInputComponent->BindAction(GravAction, ETriggerEvent::Completed, this, &ADARKCharacter::GravChange);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &ADARKCharacter::SprintChange);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &ADARKCharacter::SprintChange);
 		EnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Started, this, &ADARKCharacter::TogglePauseMenu);
 	}
 	else
@@ -933,22 +933,31 @@ void ADARKCharacter::Respawn()
 	}
 }
 
-void ADARKCharacter::GravChange()
+void ADARKCharacter::SprintChange()
 {
 	UCharacterMovementComponent* move = GetCharacterMovement();
 
-	if (move) {
-		if (sprint == 0) {
-			move->MaxWalkSpeed = 600.0;
+	if (move)
+	{
+		if (sprint == 0)
+		{
+			move->MaxWalkSpeed = 600.0f;
 
-			ChangeOxygenRate(0.75f);
+			if (!bLethalGasActive)
+			{
+				ChangeOxygenRate(0.75f);
+			}
 
 			sprint = 1;
 		}
-		else {
-			move->MaxWalkSpeed = 350.0;
+		else
+		{
+			move->MaxWalkSpeed = 350.0f;
 
-			ChangeOxygenRate(2.0f);
+			if (!bLethalGasActive)
+			{
+				ChangeOxygenRate(2.0f);
+			}
 
 			sprint = 0;
 		}

@@ -74,7 +74,7 @@ protected:
     UInputAction* DebugKillAction;
 
     UPROPERTY(EditDefaultsOnly)
-    UInputAction* GravAction;
+    UInputAction* SprintAction;
 
     UPROPERTY(EditDefaultsOnly)
     UInputAction* PauseAction;
@@ -216,7 +216,7 @@ public:
     void TogglePauseMenu();
 
     UFUNCTION(BlueprintCallable)
-    void GravChange();
+    void SprintChange();
 
     void ShowRoomSelectWidget(const TArray<FRoomData>& Choices);
 
@@ -233,6 +233,9 @@ public:
 
     UFUNCTION(BlueprintCallable)
     void ChangeOxygenRate(float rate);
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Oxygen")
+    bool bLethalGasActive = false;
 
     UPROPERTY(BlueprintReadWrite, Category = "UI")
     bool bIsInDeathZone = false;
