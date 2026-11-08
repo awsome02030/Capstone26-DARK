@@ -321,19 +321,34 @@ void ADARKCharacter::InteractCheck()
 
 	// Modded
 	if (DeviceWidget && DeviceWidget->IsVisible())
-	{
-		if (IsValid(InteractWidget))
-		{
-			InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
-		}
-		InteractHitResult = FHitResult();
-		return;
-	}
+	if (DeviceWidget && DeviceWidget->IsVisible())
+{
+    if (IsValid(InteractWidget))
+    {
+        InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
+    }
+
+    if (IsValid(LastHitObject))
+    {
+        if (UStaticMeshComponent* PreviousMesh =
+            LastHitObject->FindComponentByClass<UStaticMeshComponent>())
+        {
+            PreviousMesh->SetOverlayMaterial(nullptr);
+        }
+
+        LastHitObject = nullptr;
+    }
+
+    InteractHitResult = FHitResult();
+    return;
+}
 	// End mod
 
 
 
 	if (!IsValid(InteractWidget)) return;
+	// Hide the interaction prompt by default.
+InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
 
 	FHitResult Hit;
 	const float TraceDistance = 250.f;
@@ -354,6 +369,17 @@ void ADARKCharacter::InteractCheck()
 			Hit.GetActor()->IsA<AOxygenTank>() ||
 			Hit.GetActor()->IsA<ABreakableVial>()))
 	{
+		// Remove the overlay from the previous object if we switched targets.
+		if (IsValid(LastHitObject) && LastHitObject != Hit.GetActor())
+		{
+			if (UStaticMeshComponent* PreviousMesh =
+				LastHitObject->FindComponentByClass<UStaticMeshComponent>())
+			{
+				PreviousMesh->SetOverlayMaterial(nullptr);
+			}
+		}
+
+		// Store the new interactable.
 		LastHitObject = Hit.GetActor();
 
 		if (Hit.GetActor()->IsA<APuzzleInteractable>()) 
@@ -393,10 +419,15 @@ void ADARKCharacter::InteractCheck()
 	}
 	else
 	{
-		InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
-		if (IsValid(LastHitObject) && isPlayer) {
-			LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(nullptr);
-			LastHitObject = NULL;
+		if (IsValid(LastHitObject))
+		{
+			if (UStaticMeshComponent* OverlayMesh =
+				LastHitObject->FindComponentByClass<UStaticMeshComponent>())
+			{
+				OverlayMesh->SetOverlayMaterial(nullptr);
+			}
+
+			LastHitObject = nullptr;
 		}
 
 		InteractHitResult = FHitResult();
@@ -439,6 +470,11 @@ void ADARKCharacter::Interact()
 			{
 				Inventory.Emplace(*Data);
 				InteractHitResult.GetActor()->Destroy();
+			}
+
+			if (ItemPickupSound)
+			{
+				UGameplayStatics::PlaySound2D(this, ItemPickupSound);
 			}
 		}
 	}

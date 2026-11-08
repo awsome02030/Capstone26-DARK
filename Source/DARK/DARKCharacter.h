@@ -82,6 +82,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UUserWidget> InteractWidgetClass;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+    TObjectPtr<USoundBase> ItemPickupSound;
+
     UPROPERTY(BlueprintReadWrite, Category = "UI")
     bool bHideInteractPrompt = false;
 
