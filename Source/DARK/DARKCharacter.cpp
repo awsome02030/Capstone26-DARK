@@ -123,7 +123,7 @@ void ADARKCharacter::BeginPlay()
 
 		InteractWidget = CreateWidget<UUserWidget>(PC, InteractWidgetClass);
 		InteractWidget->AddToPlayerScreen();
-		InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
+		UpdateInteractPrompt(InteractWidget, false);
 
 		InventoryWidget = CreateWidget<UInventoryWidget>(PC, InventoryWidgetClass);
 		InventoryWidget->AddToPlayerScreen();
@@ -325,7 +325,7 @@ void ADARKCharacter::InteractCheck()
 {
     if (IsValid(InteractWidget))
     {
-        InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
+		UpdateInteractPrompt(InteractWidget, false);
     }
 
     if (IsValid(LastHitObject))
@@ -348,7 +348,7 @@ void ADARKCharacter::InteractCheck()
 
 	if (!IsValid(InteractWidget)) return;
 	// Hide the interaction prompt by default.
-InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
+	UpdateInteractPrompt(InteractWidget, false);
 
 	FHitResult Hit;
 	const float TraceDistance = 250.f;
@@ -388,17 +388,14 @@ InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
 
 			if (interactable->used == false)
 			{
-				InteractWidget->SetVisibility(
-					bHideInteractPrompt
-					? ESlateVisibility::Collapsed
-					: ESlateVisibility::Visible
-				);
+				UpdateInteractPrompt(InteractWidget, !bHideInteractPrompt);
+
 				LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(Outline);
 				InteractHitResult = Hit;
 			}
 			else 
 			{
-				InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
+				UpdateInteractPrompt(InteractWidget, false);
 				if (IsValid(LastHitObject)) {
 					LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(nullptr);
 					LastHitObject = NULL;
@@ -408,11 +405,8 @@ InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
 			}
 		}
 		else {
-			InteractWidget->SetVisibility(
-				bHideInteractPrompt
-				? ESlateVisibility::Collapsed
-				: ESlateVisibility::Visible
-			);
+			UpdateInteractPrompt(InteractWidget, !bHideInteractPrompt);
+
 			LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(Outline);
 			InteractHitResult = Hit;
 		}
