@@ -33,6 +33,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "EngineUtils.h"
 #include "Math/UnrealMathUtility.h"
+#include "Misc/ScopeExit.h"
 #include "../../../../../../UE_5.6/Engine/Plugins/VirtualProduction/TextureShare/Source/TextureShareCore/Private/Module/TextureShareCoreLogDefines.h"
 
 bool bUIReady = false;
@@ -123,7 +124,7 @@ void ADARKCharacter::BeginPlay()
 
 		InteractWidget = CreateWidget<UUserWidget>(PC, InteractWidgetClass);
 		InteractWidget->AddToPlayerScreen();
-		UpdateInteractPrompt(InteractWidget, false);
+		InteractWidget->SetVisibility(ESlateVisibility::Collapsed);
 
 		InventoryWidget = CreateWidget<UInventoryWidget>(PC, InventoryWidgetClass);
 		InventoryWidget->AddToPlayerScreen();
@@ -317,7 +318,18 @@ void ADARKCharacter::Tick(float DeltaTime)
 
 void ADARKCharacter::InteractCheck()
 {
+	bool bResolvedInteractPrompt = false;
 
+	ON_SCOPE_EXIT
+	{
+		if (IsValid(InteractWidget))
+		{
+			UpdateInteractPrompt(
+				InteractWidget,
+				bResolvedInteractPrompt
+			);
+		}
+	};
 
 	// Modded
 	if (DeviceWidget && DeviceWidget->IsVisible())
@@ -325,7 +337,7 @@ void ADARKCharacter::InteractCheck()
 {
     if (IsValid(InteractWidget))
     {
-		UpdateInteractPrompt(InteractWidget, false);
+		bResolvedInteractPrompt = false;
     }
 
     if (IsValid(LastHitObject))
@@ -348,7 +360,7 @@ void ADARKCharacter::InteractCheck()
 
 	if (!IsValid(InteractWidget)) return;
 	// Hide the interaction prompt by default.
-	UpdateInteractPrompt(InteractWidget, false);
+	bResolvedInteractPrompt = false;
 
 	FHitResult Hit;
 	const float TraceDistance = 250.f;
@@ -388,14 +400,14 @@ void ADARKCharacter::InteractCheck()
 
 			if (interactable->used == false)
 			{
-				UpdateInteractPrompt(InteractWidget, !bHideInteractPrompt);
+				bResolvedInteractPrompt = !bHideInteractPrompt;
 
 				LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(Outline);
 				InteractHitResult = Hit;
 			}
 			else 
 			{
-				UpdateInteractPrompt(InteractWidget, false);
+				bResolvedInteractPrompt = false;
 				if (IsValid(LastHitObject)) {
 					LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(nullptr);
 					LastHitObject = NULL;
@@ -405,7 +417,7 @@ void ADARKCharacter::InteractCheck()
 			}
 		}
 		else {
-			UpdateInteractPrompt(InteractWidget, !bHideInteractPrompt);
+			bResolvedInteractPrompt = !bHideInteractPrompt;
 
 			LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(Outline);
 			InteractHitResult = Hit;
