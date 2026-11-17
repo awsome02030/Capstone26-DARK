@@ -491,23 +491,41 @@ void ADARKCharacter::Interact()
 	}
 	else if (APuzzleInteractable* Check = Cast<APuzzleInteractable>(InteractHitResult.GetActor()))
 	{
-		for (int i = Check->requredItems.Num() - 1; i >= 0; i--)
-		{
-			FItemData& NeededItem = Check->requredItems[i];
+		bool bConsumedItem = false;
 
-			if (Inventory.Contains(NeededItem))
+		for (int i = Check->requiredItems.Num() - 1; i >= 0; i--)
+		{
+			const FItemData& NeededItem = Check->requiredItems[i];
+
+			int InventoryIndex = Inventory.IndexOfByPredicate(
+				[&NeededItem](const FItemData& Item)
+				{
+					return Item.ItemName == NeededItem.ItemName;
+				}
+			);
+
+			if (InventoryIndex != INDEX_NONE)
 			{
-				RemoveItem(NeededItem);
-				Check->requredItems.RemoveAt(i);
+				Inventory.RemoveAt(InventoryIndex);
+				bConsumedItem = true;
+
+				if (InventoryWidget)
+				{
+					InventoryWidget->RefreshInventory(Inventory);
+				}
+
+				Check->requiredItems.RemoveAt(i);
 				break;
 			}
 		}
 
-		if (Check->requredItems.Num() == 0 && Check->interactableType == 2)
+		if (bConsumedItem &&
+			Check->requiredItems.Num() == 0 &&
+			Check->interactableType == 2)
 		{
 			Check->DecreaseNeeded();
 		}
-		else if (Check->requredItems.Num() == 0 &&
+		else if (Check->requiredItems.Num() == 0 &&
 			Check->completeNeeded == 0 &&
 			Check->interactableType == 1)
 		{

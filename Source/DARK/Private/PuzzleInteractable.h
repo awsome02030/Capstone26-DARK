@@ -29,7 +29,7 @@ public:
 	FName roomID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
-	TArray<FItemData> requredItems;
+	TArray<FItemData> requiredItems;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ExposeOnSpawn = "true"), Category = "Puzzle")
 	TArray<AActor*> TiedClass;

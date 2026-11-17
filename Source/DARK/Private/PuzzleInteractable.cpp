@@ -95,11 +95,13 @@ void APuzzleInteractable::OnPuzzleComplete()
 
 void APuzzleInteractable::DecreaseNeeded()
 {
-	if (!used)
+	if (used)
 	{
-		used = true;
-		OnFuseInserted();
+		return;
 	}
+
+	used = true;
+	OnFuseInserted();
 
 	for (AActor* Actor : TiedClass)
 	{
