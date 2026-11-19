@@ -205,7 +205,7 @@ void ADARKCharacter::ShowRoomSelectWidget(const TArray<FRoomData>& Choices)
 	RoomSelectWidget->AddToPlayerScreen(10);
 	RoomSelectWidget->SetupRoomButtons(Choices);
 
-	PC->bShowMouseCursor = true;
+	//PC->bShowMouseCursor = true;
 	FInputModeUIOnly InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	PC->SetInputMode(InputMode);
@@ -683,10 +683,11 @@ void ADARKCharacter::TogglePauseMenu()
 	{
 		UGameplayStatics::SetGamePaused(GetWorld(), true);
 
-		FInputModeUIOnly InputMode;
-		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-		PC->SetInputMode(InputMode);
-		PC->bShowMouseCursor = true;
+		//FInputModeUIOnly InputMode;
+		//InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		//PC->SetInputMode(InputMode);
+		// Cursor is enabled by BP_DARKCharacter
+		// after the crosshair transformation finishes.
 
 		PauseMenuWidget->SetKeyboardFocus();
 
@@ -698,9 +699,8 @@ void ADARKCharacter::TogglePauseMenu()
 	{
 		UGameplayStatics::SetGamePaused(GetWorld(), false);
 
-		FInputModeGameOnly InputMode;
-		PC->SetInputMode(InputMode);
-		PC->bShowMouseCursor = false;
+		// Cursor visibility and input mode are restored
+		// by BP_DARKCharacter after the reverse animation.
 
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 		GetController()->SetIgnoreMoveInput(false);
