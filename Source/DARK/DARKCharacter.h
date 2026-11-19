@@ -160,13 +160,14 @@ protected:
     bool bDeviceAnimating = false;
     bool bDeviceOpening = false;
     bool bIsPaused = false;
+    bool bDeathInputLocked = false;
 
     FTimerHandle DeviceWidgetDelayHandle;
 
     void ShowDeviceWidgetDelayed();
 
     void SpawnAndAttachHandheld();
-    void ToggleDevice();
+    void CloseDeviceMenuImmediately();
 
     // Added audio for low oxygen sound like alarm
     UPROPERTY(EditDefaultsOnly, Category = "Audio")
@@ -220,6 +221,15 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "UI")
     void TogglePauseMenu();
+
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void ClosePauseMenu();
+
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void ToggleDevice();
+
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void ToggleInventory();
 
     UFUNCTION(BlueprintCallable)
     void SprintChange();
@@ -298,7 +308,6 @@ protected:
 
     void Interact();
     void InteractCheck();
-    void ToggleInventory();
     void RemoveItem(const FItemData& data);
     void OxygenCountdown();
 

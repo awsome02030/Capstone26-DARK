@@ -34,7 +34,6 @@
 #include "EngineUtils.h"
 #include "Math/UnrealMathUtility.h"
 #include "Misc/ScopeExit.h"
-#include "../../../../../../UE_5.6/Engine/Plugins/VirtualProduction/TextureShare/Source/TextureShareCore/Private/Module/TextureShareCoreLogDefines.h"
 
 bool bUIReady = false;
 
@@ -174,62 +173,35 @@ void ADARKCharacter::BeginPlay()
 
 void ADARKCharacter::ShowRoomSelectWidget(const TArray<FRoomData>& Choices)
 {
-	ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
-	if (!PC)
-	{
-		UE_LOG(LogTemp, Error, TEXT("ShowRoomSelectWidget: No PlayerController found!"));
-		return;
-	}
+    ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
+    if (!PC || !RoomSelectWidgetClass || !PC->InitializeCursorPresentation()) return;
 
-	if (!RoomSelectWidgetClass)
-	{
-		UE_LOG(LogTemp, Error, TEXT("ShowRoomSelectWidget: RoomSelectWidgetClass not set on character!"));
-		return;
-	}
+    if (!IsValid(RoomSelectWidget))
+    {
+        RoomSelectWidget = CreateWidget<URoomSelectWidget>(PC, RoomSelectWidgetClass);
+        if (!RoomSelectWidget) return;
+        RoomSelectWidget->OnRoomSelected.AddUniqueDynamic(this, &ADARKCharacter::OnRoomChosen);
+    }
 
-	if (RoomSelectWidget)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ShowRoomSelectWidget: A widget already exists, removing it first"));
-		RoomSelectWidget->RemoveFromParent();
-		RoomSelectWidget = nullptr;
-	}
-
-	RoomSelectWidget = CreateWidget<URoomSelectWidget>(PC, RoomSelectWidgetClass);
-	if (!RoomSelectWidget)
-	{
-		UE_LOG(LogTemp, Error, TEXT("ShowRoomSelectWidget: Failed to create widget!"));
-		return;
-	}
-
-	RoomSelectWidget->OnRoomSelected.AddDynamic(this, &ADARKCharacter::OnRoomChosen);
-	RoomSelectWidget->AddToPlayerScreen(10);
-	RoomSelectWidget->SetupRoomButtons(Choices);
-
-	//PC->bShowMouseCursor = true;
-	FInputModeUIOnly InputMode;
-	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-	PC->SetInputMode(InputMode);
-
-	UE_LOG(LogTemp, Warning, TEXT("ShowRoomSelectWidget: Widget created and added to player screen"));
+    RoomSelectWidget->SetupRoomButtons(Choices);
+    if (!RoomSelectWidget->IsInViewport()) RoomSelectWidget->AddToPlayerScreen(100);
+    RoomSelectWidget->SetVisibility(ESlateVisibility::Visible);
+    PC->RegisterCursorMenu(RoomSelectWidget, false);
 }
 
 void ADARKCharacter::OnRoomChosen(int32 ChosenIndex)
 {
-	if (GridManagerRef)
-		GridManagerRef->OnRoomChosen(ChosenIndex);
+    // Close exactly the widget that submitted this choice before generating another room.
+    URoomSelectWidget* WidgetToClose = RoomSelectWidget;
+    RoomSelectWidget = nullptr;
+    if (IsValid(WidgetToClose))
+    {
+        if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+            PC->UnregisterCursorMenu(WidgetToClose);
+        WidgetToClose->RemoveFromParent();
+    }
 
-	ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
-	if (PC)
-	{
-		PC->bShowMouseCursor = false;
-		PC->SetInputMode(FInputModeGameOnly());
-	}
-
-	if (RoomSelectWidget)
-	{
-		RoomSelectWidget->RemoveFromParent();
-		RoomSelectWidget = nullptr;
-	}
+    if (GridManagerRef) GridManagerRef->OnRoomChosen(ChosenIndex);
 }
 
 void ADARKCharacter::MoveInput(const FInputActionValue& Value)
@@ -246,6 +218,12 @@ void ADARKCharacter::LookInput(const FInputActionValue& Value)
 
 void ADARKCharacter::DoAim(float Yaw, float Pitch)
 {
+    if (bDeathInputLocked) return;
+    if (const ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+    {
+        if (PC->IsCursorSessionActive()) return;
+    }
+
 	if (GetController())
 	{
 		AddControllerYawInput(Yaw * LookSensitivity);
@@ -260,6 +238,12 @@ void ADARKCharacter::SetLookSensitivity(float NewSensitivity)
 
 void ADARKCharacter::DoMove(float Right, float Forward)
 {
+    if (bDeathInputLocked) return;
+    if (const ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+    {
+        if (PC->IsCursorSessionActive()) return;
+    }
+
 	if (GetController())
 	{
 		AddMovementInput(GetActorRightVector(), Right);
@@ -269,6 +253,12 @@ void ADARKCharacter::DoMove(float Right, float Forward)
 
 void ADARKCharacter::DoJumpStart()
 {
+    if (bDeathInputLocked) return;
+    if (const ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+    {
+        if (PC->IsCursorSessionActive()) return;
+    }
+
 	Jump();
 }
 
@@ -332,8 +322,9 @@ void ADARKCharacter::InteractCheck()
 	};
 
 	// Modded
-	if (DeviceWidget && DeviceWidget->IsVisible())
-	if (DeviceWidget && DeviceWidget->IsVisible())
+    const ADARKPlayerController* CursorPC = Cast<ADARKPlayerController>(GetController());
+    if ((CursorPC && !CursorPC->IsGameplayCursorAllowed()) ||
+        (DeviceWidget && DeviceWidget->IsVisible()))
 {
     if (IsValid(InteractWidget))
     {
@@ -394,7 +385,7 @@ void ADARKCharacter::InteractCheck()
 		// Store the new interactable.
 		LastHitObject = Hit.GetActor();
 
-		if (Hit.GetActor()->IsA<APuzzleInteractable>()) 
+		if (Hit.GetActor()->IsA<APuzzleInteractable>())
 		{
 			APuzzleInteractable* interactable = Cast<APuzzleInteractable>(Hit.GetActor());
 
@@ -405,7 +396,7 @@ void ADARKCharacter::InteractCheck()
 				LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(Outline);
 				InteractHitResult = Hit;
 			}
-			else 
+			else
 			{
 				bResolvedInteractPrompt = false;
 				if (IsValid(LastHitObject)) {
@@ -442,6 +433,12 @@ void ADARKCharacter::InteractCheck()
 
 void ADARKCharacter::Interact()
 {
+    if (bDeathInputLocked) return;
+    if (const ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+    {
+        if (PC->IsCursorSessionActive()) return;
+    }
+
 
 
 	// Modded
@@ -588,124 +585,83 @@ bool ADARKCharacter::PerformInteractTrace(FHitResult& OutHit, float TraceDistanc
 
 void ADARKCharacter::ToggleInventory()
 {
-	ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
-	if (!PC) return;
+    ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
+    if (!PC || !IsValid(InventoryWidget) || !PC->InitializeCursorPresentation()) return;
 
-
-	// Modded - prevent inventory from opening when device is triggered
-	if (DeviceWidget && DeviceWidget->IsVisible())
-	{
-		return;
-	}
-	// End mod
-
-
-
-	if (!InventoryWidget->IsVisible())
-	{
-		InventoryWidget->SetVisibility(ESlateVisibility::Visible);
-		InventoryWidget->RefreshInventory(Inventory);
-
-		FInputModeGameAndUI InputMode;
-		InputMode.SetHideCursorDuringCapture(false);
-		PC->SetInputMode(InputMode);
-		PC->SetCinematicMode(true, true, true);
-		PC->bShowMouseCursor = true;
-
-		GetCharacterMovement()->StopMovementImmediately();
-		GetController()->SetIgnoreMoveInput(true);
-		GetController()->SetIgnoreLookInput(true);
-	}
-	else
-	{
-		InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
-
-		PC->SetInputMode(FInputModeGameOnly());
-		PC->SetCinematicMode(false, false, false);
-		PC->bShowMouseCursor = false;
-
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-		GetController()->SetIgnoreMoveInput(false);
-		GetController()->SetIgnoreLookInput(false);
-
-		if (ADARKPlayerController* PlayerController = Cast<ADARKPlayerController>(GetController()))
-		{
-			PlayerController->bShowMouseCursor = false;
-			PlayerController->SetInputMode(FInputModeGameOnly());
-			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-			GetController()->SetIgnoreMoveInput(false);
-			GetController()->SetIgnoreLookInput(false);
-		}
-	}
+    if (!InventoryWidget->IsVisible())
+    {
+        if (!PC->IsGameplayCursorAllowed() || bDeviceOpen) return;
+        InventoryWidget->SetVisibility(ESlateVisibility::Visible);
+        InventoryWidget->RefreshInventory(Inventory);
+        // Preserve inventory's pawn/HUD cinematic behavior without adding input locks.
+        PC->SetCinematicMode(true, true, true, false, false);
+        PC->RegisterCursorMenu(InventoryWidget, false);
+    }
+    else
+    {
+        InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
+        PC->UnregisterCursorMenu(InventoryWidget);
+        PC->SetCinematicMode(false, true, true, false, false);
+    }
 }
 
 void ADARKCharacter::TogglePauseMenu()
 {
-	ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
-	if (!PC) return;
+    if (bDeathInputLocked) return;
+    if (bIsPaused)
+    {
+        ClosePauseMenu();
+        return;
+    }
 
+    ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
+    if (!PC || !PauseMenuClass || !PC->InitializeCursorPresentation()) return;
+    if (!IsValid(PauseMenuWidget))
+    {
+        PauseMenuWidget = CreateWidget<UUserWidget>(PC, PauseMenuClass);
+        if (!PauseMenuWidget) return;
+    }
 
-	// Modded - close device when paused
-	if (DeviceWidget && DeviceWidget->IsVisible())
-	{
-		GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
+    if (!PauseMenuWidget->IsInViewport()) PauseMenuWidget->AddToPlayerScreen(200);
+    PauseMenuWidget->SetVisibility(ESlateVisibility::Visible);
+    bIsPaused = true;
 
-		if (DeviceWidget && DeviceWidget->IsInViewport())
-		{
-			DeviceWidget->RemoveFromParent();
-		}
-		HandheldActor->SetActorHiddenInGame(false);
-	}
+    // Register the replacement first so closing Device does not end the cursor session.
+    PC->RegisterCursorMenu(PauseMenuWidget, true);
+    CloseDeviceMenuImmediately();
+}
 
-	bDeviceAnimating = false;
-	bDeviceOpening = false;
-	// End Mod
+void ADARKCharacter::ClosePauseMenu()
+{
+    if (!bIsPaused) return;
+    bIsPaused = false;
+    if (IsValid(PauseMenuWidget))
+    {
+        PauseMenuWidget->SetVisibility(ESlateVisibility::Collapsed);
+        if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+            PC->UnregisterCursorMenu(PauseMenuWidget);
+    }
+    // The controller keeps its pause/input policy until the return animation finishes.
+}
 
-
-	if (!PauseMenuWidget)
-	{
-		if (!PauseMenuClass)
-		{
-			UE_LOG(LogTemp, Error, TEXT("PauseMenuClass not assigned!"));
-			return;
-		}
-
-		PauseMenuWidget = CreateWidget<UUserWidget>(PC, PauseMenuClass);
-		PauseMenuWidget->AddToPlayerScreen();
-		PauseMenuWidget->SetVisibility(ESlateVisibility::Collapsed);
-	}
-
-	bIsPaused = !bIsPaused;
-	PauseMenuWidget->SetVisibility(bIsPaused ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-
-
-	if (bIsPaused)
-	{
-		UGameplayStatics::SetGamePaused(GetWorld(), true);
-
-		//FInputModeUIOnly InputMode;
-		//InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-		//PC->SetInputMode(InputMode);
-		// Cursor is enabled by BP_DARKCharacter
-		// after the crosshair transformation finishes.
-
-		PauseMenuWidget->SetKeyboardFocus();
-
-		GetCharacterMovement()->StopMovementImmediately();
-		GetController()->SetIgnoreMoveInput(true);
-		GetController()->SetIgnoreLookInput(true);
-	}
-	else
-	{
-		UGameplayStatics::SetGamePaused(GetWorld(), false);
-
-		// Cursor visibility and input mode are restored
-		// by BP_DARKCharacter after the reverse animation.
-
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-		GetController()->SetIgnoreMoveInput(false);
-		GetController()->SetIgnoreLookInput(false);
-	}
+void ADARKCharacter::CloseDeviceMenuImmediately()
+{
+    GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
+    if (IsValid(DeviceWidget))
+    {
+        if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+            PC->UnregisterCursorMenu(DeviceWidget);
+        DeviceWidget->RemoveFromParent();
+    }
+    bDeviceOpen = false;
+    bDeviceAnimating = false;
+    bDeviceOpening = false;
+    if (IsValid(HandheldActor))
+    {
+        HandheldActor->SetActorHiddenInGame(false);
+        HandheldActor->SetActorRelativeLocation(DeviceStartOffset);
+        HandheldActor->SetActorRelativeRotation(DeviceStartRotation);
+    }
 }
 
 void ADARKCharacter::RemoveItem(const FItemData& Data)
@@ -765,82 +721,40 @@ void ADARKCharacter::SpawnAndAttachHandheld()
 
 void ADARKCharacter::ToggleDevice()
 {
-	UE_LOG(LogTemp, Warning, TEXT("ToggleDevice CALLED. HandheldActor=%s Hidden=%d"),
-		*GetNameSafe(HandheldActor),
-		HandheldActor ? HandheldActor->IsHidden() : -1);
+    ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
+    if (!PC || !PC->InitializeCursorPresentation() || !DeviceWidget) return;
+    if (!bDeviceOpen && !PC->IsGameplayCursorAllowed()) return;
+    if (bDeviceAnimating) return;
 
-	SpawnAndAttachHandheld();
+    SpawnAndAttachHandheld();
+    if (!HandheldActor) return;
 
-	if (!HandheldActor)
-	{
-		UE_LOG(LogTemp, Error, TEXT("HandheldActor is NULL after spawn attempt."));
-		return;
-	}
+    bDeviceOpening = !bDeviceOpen;
+    bDeviceOpen = bDeviceOpening;
+    bDeviceAnimating = true;
+    DeviceAnimTime = 0.f;
+    GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
 
-	if (InventoryWidget && InventoryWidget->IsVisible())
-	{
-		return;
-	}
-
-	if (PauseMenuWidget && PauseMenuWidget->IsVisible())
-	{
-		return;
-	}
-
-	if (bDeviceAnimating) return;
-
-	bDeviceOpening = !bDeviceOpen;
-	bDeviceOpen = bDeviceOpening;
-	bDeviceAnimating = true;
-	DeviceAnimTime = 0.f;
-
-	ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController());
-	if (PC)
-	{
-		if (bDeviceOpening)
-		{
-			GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
-
-			GetWorld()->GetTimerManager().SetTimer(
-				DeviceWidgetDelayHandle,
-				this,
-				&ADARKCharacter::ShowDeviceWidgetDelayed,
-				DeviceAnimDuration,
-				false
-			);
-
-			FInputModeGameAndUI InputMode;
-			InputMode.SetHideCursorDuringCapture(false);
-			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-
-			if (DeviceWidget)
-			{
-				InputMode.SetWidgetToFocus(DeviceWidget->TakeWidget());
-			}
-
-			PC->SetInputMode(InputMode);
-			PC->bShowMouseCursor = true;
-
-			GetController()->SetIgnoreLookInput(true);
-			GetController()->SetIgnoreMoveInput(true);
-			GetCharacterMovement()->StopMovementImmediately();
-		}
-		else
-		{
-			GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
-
-			if (DeviceWidget && DeviceWidget->IsInViewport())
-			{
-				DeviceWidget->RemoveFromParent();
-			}
-
-			PC->bShowMouseCursor = false;
-			PC->SetInputMode(FInputModeGameOnly());
-
-			GetController()->SetIgnoreLookInput(false);
-			GetController()->SetIgnoreMoveInput(false);
-		}
-	}
+    if (bDeviceOpening)
+    {
+        // Reserve cursor/input ownership now. Enable the menu only after its delay.
+        PC->RegisterCursorMenu(DeviceWidget, false, false);
+        if (DeviceAnimDuration > 0.f)
+        {
+            GetWorld()->GetTimerManager().SetTimer(
+                DeviceWidgetDelayHandle, this,
+                &ADARKCharacter::ShowDeviceWidgetDelayed, DeviceAnimDuration, false);
+        }
+        else
+        {
+            ShowDeviceWidgetDelayed();
+        }
+    }
+    else
+    {
+        PC->UnregisterCursorMenu(DeviceWidget);
+        DeviceWidget->RemoveFromParent();
+    }
 }
 
 void ADARKCharacter::OxygenCountdown()
@@ -874,19 +788,28 @@ void ADARKCharacter::TakeDamagePlayer(float DamageAmount)
 
 void ADARKCharacter::Die()
 {
+    if (bDeathInputLocked) return;
+    bDeathInputLocked = true;
 	UE_LOG(LogTemp, Warning, TEXT("Player Died"));
+
+    if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+    {
+        PC->SetCursorPresentationSuppressed(true);
+        PC->ResetCursorSession();
+    }
+    bIsPaused = false;
 
 	OnPlayerResetStarted();
 
 	if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
 	{
 		PC->PlayerCameraManager->StartCameraFade(
-			0.f,   
-			1.f,   
-			0.3f,  
+			0.f,
+			1.f,
+			0.3f,
 			FLinearColor::Black,
 			false,
-			true   
+			true
 		);
 	}
 
@@ -901,23 +824,7 @@ void ADARKCharacter::Die()
 		LowOxygenAudioComponent->Stop();
 	}
 
-	// Modded - CLose widget when die
-	GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
-
-	if (DeviceWidget && DeviceWidget->IsInViewport())
-	{
-		DeviceWidget->RemoveFromParent();
-	}
-	
-
-	bDeviceAnimating = false;
-	bDeviceOpening = false;
-
-	if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
-	{
-		PC->bShowMouseCursor = false;
-		PC->SetInputMode(FInputModeGameOnly());
-	}
+	CloseDeviceMenuImmediately();
 
 	FTimerHandle RespawnTimer;
 	GetWorld()->GetTimerManager().SetTimer(
@@ -931,6 +838,11 @@ void ADARKCharacter::Die()
 
 void ADARKCharacter::Respawn()
 {
+    if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+    {
+        PC->SetCursorPresentationSuppressed(true);
+        PC->ResetCursorSession();
+    }
 	OnPlayerResetStarted();
 	Health = MaxHealth;
 	Oxygen = 100;
@@ -948,44 +860,27 @@ void ADARKCharacter::Respawn()
 	SetActorLocation(SpawnLocation);
 	SetActorHiddenInGame(false);
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-	GetController()->SetIgnoreMoveInput(false);
-	GetController()->SetIgnoreLookInput(false);
+    if (bDeathInputLocked)
+    {
+        GetController()->SetIgnoreMoveInput(false);
+        GetController()->SetIgnoreLookInput(false);
+        bDeathInputLocked = false;
+    }
 
 
-	// Modded - reset when respawn
-	GetWorld()->GetTimerManager().ClearTimer(DeviceWidgetDelayHandle);
+    CloseDeviceMenuImmediately();
+    if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+        PC->SetCinematicMode(false, true, true, false, false);
 
-	if (DeviceWidget && DeviceWidget->IsInViewport())
-	{
-		DeviceWidget->RemoveFromParent();
-	}
-	if (HandheldActor)
-	{
-		HandheldActor->SetActorHiddenInGame(false);
-	}
-
-	SetActorLocation(SpawnLocation);
-	SetActorHiddenInGame(false);
-	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-	GetController()->SetIgnoreMoveInput(false);
-	GetController()->SetIgnoreLookInput(false);
-
-	if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
-	{
-		PC->bShowMouseCursor = false;
-		PC->SetInputMode(FInputModeGameOnly());
-		PC->SetCinematicMode(false, false, false);
-	}
-
-	bDeviceAnimating = false;
-	bDeviceOpening = false;
 	OnPlayerRespawned();
+    if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+        PC->SetCursorPresentationSuppressed(false);
 	if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
 	{
 		PC->PlayerCameraManager->StartCameraFade(
-			1.f,   
-			0.f,  
-			0.5f,  
+			1.f,
+			0.f,
+			0.5f,
 			FLinearColor::Black,
 			false,
 			false
@@ -1064,14 +959,11 @@ void ADARKCharacter::ReduceOxygen(int Amount)
 
 void ADARKCharacter::ShowDeviceWidgetDelayed()
 {
-	if (!DeviceWidget) return;
-
-	if (!DeviceWidget->IsInViewport())
-	{
-		DeviceWidget->AddToPlayerScreen(50);
-	}
-
-	DeviceWidget->SetVisibility(ESlateVisibility::Visible);
+    if (!bDeviceOpen || !IsValid(DeviceWidget)) return;
+    if (!DeviceWidget->IsInViewport()) DeviceWidget->AddToPlayerScreen(150);
+    DeviceWidget->SetVisibility(ESlateVisibility::Visible);
+    if (ADARKPlayerController* PC = Cast<ADARKPlayerController>(GetController()))
+        PC->SetCursorMenuReady(DeviceWidget, true);
 }
 
 void ADARKCharacter::ChangeOxygenRate(float rate)

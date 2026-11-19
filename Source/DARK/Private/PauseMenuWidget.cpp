@@ -22,8 +22,7 @@ void UPauseMenuWidget::OnRespawnClicked()
     {
         if (ADARKCharacter* Character = Cast<ADARKCharacter>(PC->GetPawn()))
         {
-            Character->TogglePauseMenu();
-            Character->Respawn();         
+            Character->Respawn();
         }
     }
 }
