@@ -17,6 +17,12 @@ public:
     UFUNCTION(BlueprintCallable)
     void SetupRoomButtons(const TArray<FRoomData>& Rooms);
 
+    UPROPERTY(BlueprintReadOnly, Category = "RoomSelect")
+    TArray<FRoomData> CurrentRoomChoices;
+
+    UFUNCTION(BlueprintImplementableEvent, Category = "RoomSelect")
+    void UpdateRoomPreviews();
+
     UPROPERTY(BlueprintAssignable, Category = "RoomSelect")
     FOnRoomSelected OnRoomSelected;
 

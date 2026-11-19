@@ -21,12 +21,16 @@ void URoomSelectWidget::SetSlotVisible(UButton* Button, UTextBlock* Text, bool b
 
 void URoomSelectWidget::SetupRoomButtons(const TArray<FRoomData>& Rooms)
 {
+    CurrentRoomChoices = Rooms;
+
     if (RoomText1) RoomText1->SetText(Rooms.IsValidIndex(0) ? FText::FromString(Rooms[0].RoomName) : FText::GetEmpty());
     SetSlotVisible(RoomButton1, RoomText1, Rooms.IsValidIndex(0));
     if (RoomText2) RoomText2->SetText(Rooms.IsValidIndex(1) ? FText::FromString(Rooms[1].RoomName) : FText::GetEmpty());
     SetSlotVisible(RoomButton2, RoomText2, Rooms.IsValidIndex(1));
     if (RoomText3) RoomText3->SetText(Rooms.IsValidIndex(2) ? FText::FromString(Rooms[2].RoomName) : FText::GetEmpty());
     SetSlotVisible(RoomButton3, RoomText3, Rooms.IsValidIndex(2));
+
+    UpdateRoomPreviews();
 }
 
 void URoomSelectWidget::HandleButton1Clicked()
