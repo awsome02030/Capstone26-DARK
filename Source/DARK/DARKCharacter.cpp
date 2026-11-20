@@ -5,6 +5,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
 #include "Item.h"
@@ -321,115 +322,123 @@ void ADARKCharacter::InteractCheck()
 		}
 	};
 
-	// Modded
-    const ADARKPlayerController* CursorPC = Cast<ADARKPlayerController>(GetController());
-    if ((CursorPC && !CursorPC->IsGameplayCursorAllowed()) ||
-        (DeviceWidget && DeviceWidget->IsVisible()))
-{
-    if (IsValid(InteractWidget))
-    {
-		bResolvedInteractPrompt = false;
-    }
+	// Safely remove our previous outline and always clear the cache.
+	const auto ClearPreviousOutline = [this]()
+		{
+			AActor* PreviousActor = LastHitObject.Get();
 
-    if (IsValid(LastHitObject))
-    {
-        if (UStaticMeshComponent* PreviousMesh =
-            LastHitObject->FindComponentByClass<UStaticMeshComponent>())
-        {
-            PreviousMesh->SetOverlayMaterial(nullptr);
-        }
+			if (IsValid(PreviousActor))
+			{
+				UStaticMeshComponent* PreviousMesh =
+					PreviousActor->FindComponentByClass<UStaticMeshComponent>();
 
-        LastHitObject = nullptr;
-    }
+				if (IsValid(PreviousMesh))
+				{
+					PreviousMesh->SetOverlayMaterial(nullptr);
+				}
+			}
 
-    InteractHitResult = FHitResult();
-    return;
-}
-	// End mod
+			LastHitObject = nullptr;
+		};
 
+	// Every check starts without an interaction target.
+	InteractHitResult = FHitResult();
 
+	const ADARKPlayerController* CursorPC =
+		Cast<ADARKPlayerController>(GetController());
 
-	if (!IsValid(InteractWidget)) return;
-	// Hide the interaction prompt by default.
-	bResolvedInteractPrompt = false;
+	UWorld* TraceWorld = GetWorld();
 
-	FHitResult Hit;
+	const bool bCursorBlocksInteraction =
+		CursorPC && !CursorPC->IsGameplayCursorAllowed();
+
+	const bool bDeviceBlocksInteraction =
+		IsValid(DeviceWidget) && DeviceWidget->IsVisible();
+
+	if (!IsValid(InteractWidget) ||
+		!IsValid(FirstPersonCameraComponent) ||
+		!TraceWorld ||
+		bCursorBlocksInteraction ||
+		bDeviceBlocksInteraction)
+	{
+		ClearPreviousOutline();
+		return;
+	}
+
 	const float TraceDistance = 250.f;
 
-	FVector Start = FirstPersonCameraComponent->GetComponentLocation();
-	FVector End = Start + FirstPersonCameraComponent->GetForwardVector() * TraceDistance;
+	const FVector Start =
+		FirstPersonCameraComponent->GetComponentLocation();
+
+	const FVector End = Start +
+		FirstPersonCameraComponent->GetForwardVector() * TraceDistance;
 
 	InteractVectorEnd = End;
 
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 
-	bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_GameTraceChannel1, Params);
+	FHitResult Hit;
 
-	if (bHit && Hit.GetActor() &&
-		(Hit.GetActor()->IsA<AItem>() ||
-			Hit.GetActor()->IsA<APuzzleInteractable>() ||
-			Hit.GetActor()->IsA<AOxygenTank>() ||
-			Hit.GetActor()->IsA<ABreakableVial>()))
+	const bool bHit = TraceWorld->LineTraceSingleByChannel(
+		Hit,
+		Start,
+		End,
+		ECC_GameTraceChannel1,
+		Params
+	);
+
+	AActor* HitActor = bHit ? Hit.GetActor() : nullptr;
+
+	if (!IsValid(HitActor))
 	{
-		// Remove the overlay from the previous object if we switched targets.
-		if (IsValid(LastHitObject) && LastHitObject != Hit.GetActor())
-		{
-			if (UStaticMeshComponent* PreviousMesh =
-				LastHitObject->FindComponentByClass<UStaticMeshComponent>())
-			{
-				PreviousMesh->SetOverlayMaterial(nullptr);
-			}
-		}
-
-		// Store the new interactable.
-		LastHitObject = Hit.GetActor();
-
-		if (Hit.GetActor()->IsA<APuzzleInteractable>())
-		{
-			APuzzleInteractable* interactable = Cast<APuzzleInteractable>(Hit.GetActor());
-
-			if (interactable->used == false)
-			{
-				bResolvedInteractPrompt = !bHideInteractPrompt;
-
-				LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(Outline);
-				InteractHitResult = Hit;
-			}
-			else
-			{
-				bResolvedInteractPrompt = false;
-				if (IsValid(LastHitObject)) {
-					LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(nullptr);
-					LastHitObject = NULL;
-				}
-
-				InteractHitResult = FHitResult();
-			}
-		}
-		else {
-			bResolvedInteractPrompt = !bHideInteractPrompt;
-
-			LastHitObject->FindComponentByClass<UStaticMeshComponent>()->SetOverlayMaterial(Outline);
-			InteractHitResult = Hit;
-		}
+		ClearPreviousOutline();
+		return;
 	}
-	else
+
+	const bool bIsSupportedActor =
+		HitActor->IsA<AItem>() ||
+		HitActor->IsA<APuzzleInteractable>() ||
+		HitActor->IsA<AOxygenTank>() ||
+		HitActor->IsA<ABreakableVial>();
+
+	if (!bIsSupportedActor)
 	{
-		if (IsValid(LastHitObject))
-		{
-			if (UStaticMeshComponent* OverlayMesh =
-				LastHitObject->FindComponentByClass<UStaticMeshComponent>())
-			{
-				OverlayMesh->SetOverlayMaterial(nullptr);
-			}
-
-			LastHitObject = nullptr;
-		}
-
-		InteractHitResult = FHitResult();
+		ClearPreviousOutline();
+		return;
 	}
+
+	// Used puzzle actors should not remain interaction targets.
+	APuzzleInteractable* Puzzle =
+		Cast<APuzzleInteractable>(HitActor);
+
+	if (IsValid(Puzzle) && Puzzle->used)
+	{
+		ClearPreviousOutline();
+		return;
+	}
+
+	// Remove the old outline when changing targets.
+	if (LastHitObject.Get() != HitActor)
+	{
+		ClearPreviousOutline();
+	}
+
+	LastHitObject = HitActor;
+
+	UStaticMeshComponent* HitMesh =
+		HitActor->FindComponentByClass<UStaticMeshComponent>();
+
+	if (IsValid(HitMesh))
+	{
+		HitMesh->SetOverlayMaterial(Outline);
+	}
+
+	// Interaction still works when an actor has no static mesh.
+	bResolvedInteractPrompt = !bHideInteractPrompt;
+	InteractHitResult = Hit;
 }
+
 
 void ADARKCharacter::Interact()
 {

@@ -271,7 +271,8 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Outline")
     UMaterialInterface* Outline;
 
-    AActor* LastHitObject = NULL;
+    UPROPERTY(Transient)
+    TObjectPtr<AActor> LastHitObject = nullptr;
 
     UPROPERTY(BlueprintReadWrite)
     bool vialSolved = false;
