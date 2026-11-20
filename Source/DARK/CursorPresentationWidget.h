@@ -46,6 +46,9 @@ public:
     UFUNCTION(BlueprintPure, Category = "Cursor")
     ECursorPresentationPhase GetCursorPhase() const { return Phase; }
 
+    UFUNCTION(BlueprintCallable, Category = "Cursor")
+    void CompleteCursorMorphPreparation();
+
     UPROPERTY(BlueprintAssignable, Category = "Cursor")
     FCursorPresentationPhaseChanged OnPhaseChanged;
 
@@ -102,4 +105,5 @@ private:
     bool bResetting = false;
     bool bIntroReady = false;
     bool bWaitingForIntro = false;
+    bool bWaitingForMorphPreparation = false;
 };

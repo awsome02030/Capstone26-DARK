@@ -57,11 +57,32 @@ void UCursorPresentationWidget::SetIntroReady(bool bReady)
 void UCursorPresentationWidget::PlayOpeningMorph()
 {
     bWaitingForIntro = false;
+    bWaitingForMorphPreparation = true;
+
+    // Blueprint will call CompleteCursorMorphPreparation when ready.
     PrepareCursorMorph();
+}
+
+void UCursorPresentationWidget::CompleteCursorMorphPreparation()
+{
+    if (bResetting ||
+        !bWaitingForMorphPreparation ||
+        Phase != ECursorPresentationPhase::Opening)
+    {
+        return;
+    }
+
+    bWaitingForMorphPreparation = false;
+
     if (MousePointerTransform)
     {
-        PlayAnimation(MousePointerTransform, 0.f, 1,
-            EUMGSequencePlayMode::Forward, 1.f, false);
+        PlayAnimation(
+            MousePointerTransform,
+            0.f,
+            1,
+            EUMGSequencePlayMode::Forward,
+            1.f,
+            false);
     }
     else
     {
@@ -147,6 +168,7 @@ void UCursorPresentationWidget::ResetToGameplay()
 {
     bResetting = true;
     bWaitingForIntro = false;
+    bWaitingForMorphPreparation = false;
     Phase = ECursorPresentationPhase::Gameplay;
     ApplyAnimationStartPose(MousePointerTransform);
     ApplyVisualOffset(FVector2D::ZeroVector);
