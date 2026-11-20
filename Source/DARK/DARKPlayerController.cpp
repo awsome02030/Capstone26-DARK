@@ -8,11 +8,36 @@
 #include "Blueprint/UserWidget.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Widget.h"
+#include "Framework/Application/SlateApplication.h"
+#include "GenericPlatform/ICursor.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "DARK.h"
 #include "Widgets/Input/SVirtualJoystick.h"
+
+namespace
+{
+    // Keep the platform cursor in sync at input/focus handoffs. Merely setting
+    // the controller's cursor properties does not immediately refresh Slate.
+    void RefreshInvisiblePlatformCursor()
+    {
+        if (!FSlateApplication::IsInitialized()) return;
+
+        FSlateApplication& Slate = FSlateApplication::Get();
+        if (!Slate.IsActive()) return;
+
+        // Refresh the current widget/viewport cursor reply, including software
+        // cursor state, before applying this menu session's native cursor policy.
+        Slate.QueryCursor();
+
+        const TSharedPtr<ICursor> PlatformCursor = Slate.GetPlatformCursor();
+        if (PlatformCursor.IsValid())
+        {
+            PlatformCursor->SetType(EMouseCursor::None);
+        }
+    }
+}
 
 ADARKPlayerController::ADARKPlayerController()
 {
@@ -82,6 +107,7 @@ UCursorPresentationWidget* ADARKPlayerController::InitializeCursorPresentation()
         CursorPresentation->OnPhaseChanged.AddUniqueDynamic(
             this, &ADARKPlayerController::HandleCursorPhaseChanged);
         CursorPresentation->AddToViewport(10000);
+        ConfigureInvisibleCursor(CursorPresentation);
         CursorPresentation->SetPresentationSuppressed(bCursorSuppressed);
         NotifyCursorPolicyChanged();
     }
@@ -136,6 +162,8 @@ void ADARKPlayerController::RegisterCursorMenu(
         SavedCurrentCursor = CurrentMouseCursor;
         DefaultMouseCursor = EMouseCursor::None;
         CurrentMouseCursor = EMouseCursor::None;
+        // Clear a cached native arrow before releasing gameplay mouse capture.
+        RefreshInvisiblePlatformCursor();
         bShowMouseCursor = true;
         bCenterOnActivation = true;
 
@@ -232,6 +260,7 @@ void ADARKPlayerController::FocusTransitionShield()
     SetInputMode(Mode);
     FlushPressedKeys();
     CursorPresentation->SetKeyboardFocus();
+    RefreshInvisiblePlatformCursor();
 }
 
 void ADARKPlayerController::ActivateTopMenu()
@@ -263,6 +292,7 @@ void ADARKPlayerController::ActivateTopMenu()
         bCenterOnActivation = false;
     }
     UpdateOwnedPause();
+    RefreshInvisiblePlatformCursor();
 }
 
 void ADARKPlayerController::CenterRealMouse()

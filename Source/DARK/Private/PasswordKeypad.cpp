@@ -1,19 +1,26 @@
 #include "PasswordKeypad.h"
 
 #include "DARKCharacter.h"
+#include "DARKPlayerController.h"
 #include "Blueprint/UserWidget.h"
-#include "GameFramework/PlayerController.h"
 
 void APasswordKeypad::Interact(ADARKCharacter* PlayerCharacter)
 {
-    if (!PlayerCharacter)
+    if (!IsValid(PlayerCharacter))
     {
         return;
     }
 
-    PasswordWidget = nullptr;
-    InteractingPlayer = PlayerCharacter;
+    // Keep the reference to an already-open widget instead of spawning a copy.
+    if (IsValid(PasswordWidget) && PasswordWidget->IsInViewport())
+    {
+        return;
+    }
 
+    // Clear a stale instance, for example after the controller removed menus
+    // during a respawn. Unregistering an absent registration is harmless.
+    ClosePasswordWidget();
+    InteractingPlayer = PlayerCharacter;
     OpenPasswordWidget();
 }
 
@@ -22,52 +29,49 @@ void APasswordKeypad::OpenPasswordWidget()
     if (!PasswordWidgetClass)
     {
         UE_LOG(LogTemp, Error, TEXT("PasswordKeypad: PasswordWidgetClass is not set."));
+        InteractingPlayer = nullptr;
         return;
     }
 
-    if (!InteractingPlayer)
+    if (!IsValid(InteractingPlayer))
     {
+        InteractingPlayer = nullptr;
         return;
     }
 
-    APlayerController* PC = Cast<APlayerController>(
-        InteractingPlayer->GetController()
-    );
+    ADARKPlayerController* PC = Cast<ADARKPlayerController>(
+        InteractingPlayer->GetController());
 
-    if (!PC)
+    if (!IsValid(PC))
     {
-        UE_LOG(LogTemp, Error, TEXT("PasswordKeypad: Could not find PlayerController."));
+        UE_LOG(LogTemp, Error, TEXT("PasswordKeypad: Could not find DARKPlayerController."));
+        InteractingPlayer = nullptr;
         return;
     }
 
-    PasswordWidget = CreateWidget<UUserWidget>(
-        PC,
-        PasswordWidgetClass
-    );
+    // Do not display an unmanaged menu if cursor presentation cannot initialize.
+    if (!PC->InitializeCursorPresentation())
+    {
+        UE_LOG(LogTemp, Error, TEXT("PasswordKeypad: Could not initialize cursor presentation."));
+        InteractingPlayer = nullptr;
+        return;
+    }
 
-    if (!PasswordWidget)
+    PasswordWidget = CreateWidget<UUserWidget>(PC, PasswordWidgetClass);
+
+    if (!IsValid(PasswordWidget))
     {
         UE_LOG(LogTemp, Error, TEXT("PasswordKeypad: Failed to create PasswordWidget."));
+        InteractingPlayer = nullptr;
         return;
     }
 
+    PasswordWidget->SetIsFocusable(true);
     PasswordWidget->AddToViewport();
 
-    PC->SetIgnoreMoveInput(true);
-    PC->SetIgnoreLookInput(true);
-
-    FInputModeGameAndUI InputMode;
-
-    InputMode.SetWidgetToFocus(
-        PasswordWidget->TakeWidget()
-    );
-
-    InputMode.SetLockMouseToViewportBehavior(
-        EMouseLockMode::DoNotLock
-    );
-
-    PC->SetInputMode(InputMode);
-    PC->bShowMouseCursor = true;
+    // Keep the world running, matching the original keypad behavior. The
+    // controller owns the morph, input mode, cursor visibility and input gate.
+    PC->RegisterCursorMenu(PasswordWidget, false);
 }
 
 void APasswordKeypad::PasswordCompleted(bool bCorrect)
@@ -78,32 +82,31 @@ void APasswordKeypad::PasswordCompleted(bool bCorrect)
     }
 
     ClosePasswordWidget();
-
     OnPuzzleComplete();
 }
 
 void APasswordKeypad::ClosePasswordWidget()
 {
-    if (PasswordWidget)
-    {
-        PasswordWidget->RemoveFromParent();
-        PasswordWidget = nullptr;
-    }
+    UUserWidget* WidgetToClose = PasswordWidget;
 
-    if (InteractingPlayer)
-    {
-        APlayerController* PC = Cast<APlayerController>(
-            InteractingPlayer->GetController()
-        );
-
-        if (PC)
-        {
-            PC->SetIgnoreMoveInput(false);
-            PC->SetIgnoreLookInput(false);
-            PC->SetInputMode(FInputModeGameOnly());
-            PC->bShowMouseCursor = false;
-        }
-    }
-
+    // Clear actor references first so a repeated close or a Destruct callback
+    // cannot try to close the same widget recursively.
+    PasswordWidget = nullptr;
     InteractingPlayer = nullptr;
+
+    if (!IsValid(WidgetToClose))
+    {
+        return;
+    }
+
+    // Use the widget's owner even if the character is no longer possessed.
+    ADARKPlayerController* PC = Cast<ADARKPlayerController>(
+        WidgetToClose->GetOwningPlayer());
+
+    if (IsValid(PC))
+    {
+        PC->UnregisterCursorMenu(WidgetToClose);
+    }
+
+    WidgetToClose->RemoveFromParent();
 }
