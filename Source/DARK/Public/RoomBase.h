@@ -3,6 +3,7 @@
 #include "GameFramework/Actor.h"
 #include "RoomBase.generated.h"
 
+class USoundBase;
 class AGridManager;
 class APuzzleDoor;
 
@@ -21,6 +22,9 @@ protected:
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Room")
     FName RoomID;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Audio|Ambience")
+    TObjectPtr<USoundBase> RoomAmbience = nullptr;
 
     UFUNCTION(BlueprintPure, Category = "Room")
     AGridManager* GetGridManager() const { return GridManager; }
