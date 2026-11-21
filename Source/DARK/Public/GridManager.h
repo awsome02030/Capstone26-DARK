@@ -17,7 +17,8 @@ enum class ERoomType : uint8
     CargoMaintenance,
     FusionReactor,
     Haunt,
-    EscapePods
+    EscapePods,
+    TestVertical
 };
 
 UENUM(BlueprintType)
@@ -138,6 +139,8 @@ private:
 
     TMap<FIntPoint, ARoomBase*> SpawnedRooms;
     TMap<FIntPoint, AActor*> SpawnedHallways;
+    // Additional elevation above the grid's existing RoomZOffset.
+    TMap<FIntPoint, float> RoomElevationOffsets;
     TArray<int32> PendingRoomChoiceIndices;
 
     AActor* CurrentExitDoor = nullptr;

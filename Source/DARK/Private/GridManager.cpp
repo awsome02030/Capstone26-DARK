@@ -113,6 +113,7 @@ void AGridManager::SpawnAnchorRoom()
     if (AnchorRoom)
     {
         SpawnedRooms.Add(FIntPoint(0, 0), AnchorRoom);
+        RoomElevationOffsets.Add(FIntPoint(0, 0), 0.f);
 
         AGridManager* Self = this;
         ARoomBase* RoomRef = AnchorRoom;
@@ -291,8 +292,20 @@ void AGridManager::SpawnChosenRoom(const FRoomData& RoomData)
         return;
     }
 
-    FIntPoint NextCell = GetNextCell(CurrentExitRoomCell, CurrentExitDirection);
+    FIntPoint NextCell = GetNextCell(CurrentExitRoomCell,CurrentExitDirection);
+
+    // Inherit the source room's elevation.
+    float NewRoomElevation =
+        RoomElevationOffsets.FindRef(CurrentExitRoomCell);
+
+    // Add any elevation change specified by the selected exit.
+    if (const APuzzleDoor* ExitDoor = Cast<APuzzleDoor>(CurrentExitDoor))
+    {
+        NewRoomElevation += ExitDoor->NextRoomZOffset;
+    }
+
     FVector SpawnLocation = GridToWorld(NextCell);
+    SpawnLocation.Z += NewRoomElevation;
 
     FVector Offset = FVector::ZeroVector;
 
@@ -332,7 +345,15 @@ void AGridManager::SpawnChosenRoom(const FRoomData& RoomData)
         Room->RoomID = NewRoomID;
 
         SpawnedRooms.Add(NextCell, Room);
-        SpawnHallway(CurrentExitRoomCell, NextCell, CurrentExitDirection);
+
+        // Save before spawning the hallway, which reads this elevation.
+        RoomElevationOffsets.Add(NextCell, NewRoomElevation);
+
+        SpawnHallway(
+            CurrentExitRoomCell,
+            NextCell,
+            CurrentExitDirection
+        );
 
         if (APuzzleDoor* ExitDoor = Cast<APuzzleDoor>(CurrentExitDoor))
         {
@@ -382,7 +403,9 @@ void AGridManager::SpawnHallway(const FIntPoint& FromCell, const FIntPoint& ToCe
     FVector ToWorld = GridToWorld(ToCell);
 
     FVector Mid = (FromWorld + ToWorld) * 0.5f;
-    Mid.Z += RoomZOffset;
+
+    // The hallway connects the selected exit to the new room's entrance.
+    Mid.Z += RoomZOffset + RoomElevationOffsets.FindRef(ToCell);
     FRotator Rot = HallwayRotationForDirection(Dir);
 
     AActor* Hallway = GetWorld()->SpawnActor<AActor>(HallwayClass, Mid, Rot);
@@ -400,6 +423,7 @@ void AGridManager::ClearGrid()
             Pair.Value->Destroy();
 
     SpawnedRooms.Empty();
+    RoomElevationOffsets.Empty();
 
     for (auto& Pair : SpawnedHallways)
         if (IsValid(Pair.Value))

@@ -22,6 +22,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door")
 	EDoorDirection DoorDirection = EDoorDirection::North;
 
+	// Height change from this room's entrance level to this exit.
+	// Applied to both the next room and its connecting hallway.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid|Spawning")
+	float NextRoomZOffset = 0.f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door|Advanced")
 	AGridManager* GridManager;
 
