@@ -44,11 +44,7 @@ void ABreakableVial::Break()
 
 	if (BreakSound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(
-			this,
-			BreakSound,
-			GetActorLocation()
-		);
+		UGameplayStatics::PlaySound2D(this, BreakSound);
 	}
 
 	OnVialBroken.Broadcast(this);
